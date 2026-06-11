@@ -4,22 +4,22 @@ import { useRef, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { authService } from "@/services/auth"
+import { AuthLayout } from "@/components/auth/AuthLayout"
+import { AuthHeader } from "@/components/auth/AuthHeader"
+import { GoldDivider } from "@/components/auth/GoldDivider"
+import { GoldButton } from "@/components/auth/GoldButton"
+import { AuthSuspenseFallback } from "@/components/auth/AuthSuspenseFallback"
+import { useVerifyOtpMutation } from "@/store/api"
 import { useAppDispatch } from "@/store/hooks"
-import { setUser } from "@/store/authSlice"
 
 function VerifyOtpForm() {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const [verifyOtp, { isLoading }] = useVerifyOtpMutation()
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || ""
   const otpType = parseInt(searchParams.get("type") || "1") as 1 | 2
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""))
-  const [isLoading, setIsLoading] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null))
 
   const handleChange = (index: number, value: string) => {
@@ -57,79 +57,71 @@ function VerifyOtpForm() {
       toast.error("Please enter the full 6-digit code")
       return
     }
-    setIsLoading(true)
     try {
-      const response = await authService.verifyOtp(email, code, otpType)
-      const { user, token } = response.data
-      localStorage.setItem("token", token)
-      localStorage.setItem("user", JSON.stringify(user))
-      dispatch(setUser({ user, token }))
+      await verifyOtp({ email, otp: code, type: otpType }).unwrap()
       router.push("/home")
     } catch {
       toast.error("Invalid or expired OTP")
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Verify OTP</CardTitle>
-          <CardDescription>
-            Enter the 6-digit code sent to {email || "your email"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="flex justify-center gap-2">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    inputRefs.current[index] = el
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={index === 0 ? handlePaste : undefined}
-                  className="h-12 w-10 rounded-lg border border-input bg-transparent text-center text-lg font-medium text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/50"
-                />
-              ))}
-            </div>
-            <Button
-              type="submit"
-              className="mt-6 w-full"
-              disabled={isLoading || otp.join("").length !== 6}
-            >
-              {isLoading && <Loader2 className="animate-spin" />}
-              {isLoading ? "Verifying..." : "Verify OTP"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center text-sm">
-            <Link href="/login" className="text-primary hover:underline">
-              Back to Sign In
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthLayout>
+      <AuthHeader
+        title="Verify OTP"
+        subtitle={
+          <>
+            Enter the 6-digit code sent to{" "}
+            <span className="text-white/60">{email || "your email"}</span>
+          </>
+        }
+      />
+      <GoldDivider />
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex justify-center gap-3">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              ref={(el) => {
+                inputRefs.current[index] = el
+              }}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              onPaste={index === 0 ? handlePaste : undefined}
+              className="h-14 w-11 rounded-xl border border-white/[0.08] bg-white/[0.06] text-center text-lg font-semibold text-white outline-none transition-all duration-200 focus:border-[#D4A44A]/50 focus:ring-2 focus:ring-[#D4A44A]/10"
+            />
+          ))}
+        </div>
+
+        <GoldButton
+          isSubmitting={isLoading}
+          loadingText="Verifying..."
+          disabled={isLoading || otp.join("").length !== 6}
+        >
+          Verify OTP
+        </GoldButton>
+      </form>
+
+      <p className="text-center text-sm text-white/40">
+        <Link
+          href="/login"
+          className="font-semibold text-[#D4A44A] transition-colors hover:text-[#F5D485]"
+        >
+          Back to Sign In
+        </Link>
+      </p>
+    </AuthLayout>
   )
 }
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="animate-spin text-primary" size={24} />
-        </div>
-      }
-    >
+    <Suspense fallback={<AuthSuspenseFallback />}>
       <VerifyOtpForm />
     </Suspense>
   )

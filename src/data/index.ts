@@ -1,5 +1,3 @@
-export { courses } from './courses'
 export { raags } from './raags'
 export { gurbaniItems } from './gurbani'
-export { storeProducts } from './store'
 export { contests, testimonials } from './contests'

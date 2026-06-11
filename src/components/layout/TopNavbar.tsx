@@ -2,12 +2,21 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
 import { Menu, X, User, BookOpen, LogOut } from "lucide-react"
 import { useAppSelector, useAppDispatch } from "@/store/hooks"
+import { useLogoutMutation } from "@/store/api"
 import { logout } from "@/store/authSlice"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { AuthLinks } from "./AuthLinks"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -16,6 +25,7 @@ const navLinks = [
   { label: "Courses", href: "/courses" },
   { label: "Gurmat Sangeet", href: "/gurmat-sangeet" },
   { label: "Gurbani", href: "/gurbani" },
+  { label: "Video Tutorials", href: "/videos" },
   { label: "Our Store", href: "/store" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -23,12 +33,30 @@ const navLinks = [
 
 export function TopNavbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
+  const [logoutApi] = useLogoutMutation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileRef = useRef<HTMLDivElement>(null)
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi().unwrap()
+    } catch {
+      /* still clear local state */
+    }
+    setDropdownOpen(false)
+    setMobileOpen(false)
+    setShowLogoutModal(false)
+    router.push("/home")
+  }
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -51,14 +79,14 @@ export function TopNavbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50"
       style={{
-        background: 'linear-gradient(180deg, #081527 0%, #071220 100%)',
-        boxShadow: '0 8px 32px rgba(0,0,0,.25)',
+        background: 'var(--nav-gradient)',
+        boxShadow: 'var(--nav-shadow)',
       }}
     >
       <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-8">
         <Link href="/home" className="flex items-center gap-3">
           <Image src="/logo.jpeg" width={48} height={48} className="h-12 w-12 rounded-full object-cover" alt="Raag Vidyalaya" />
-          <span className="hidden text-xl font-semibold text-white sm:inline">Raag Vidyalaya</span>
+          <span className="hidden text-xl font-semibold text-foreground sm:inline">Raag Vidyalaya</span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
@@ -67,9 +95,9 @@ export function TopNavbar() {
               key={link.href}
               href={link.href}
               className={`text-sm font-medium transition-all duration-300 ${
-                isActive(link.href)
-                  ? "text-primary"
-                  : "text-[#F8FAFC] hover:text-primary"
+                    isActive(link.href)
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
               }`}
             >
               {link.label}
@@ -82,43 +110,49 @@ export function TopNavbar() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          {isAuthenticated && user ? (
-            <div className="relative hidden md:block" ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 focus:outline-none">
-                <Avatar size="sm">
+          {mounted ? (
+            isAuthenticated && user ? (
+              <div className="relative hidden md:block" ref={dropdownRef}>
+                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 focus:outline-none">
+                  <Avatar size="sm">
         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
           {(user?.name || user?.userName || '?').charAt(0).toUpperCase()}
         </AvatarFallback>
-                </Avatar>
-              </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-[#16243a] bg-[#081527] py-1 shadow-lg">
-                  <Link
-                    href="/profile"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-[#94A3B8] transition-colors hover:text-white hover:bg-[#16243a]"
-                  >
-                    <User size={14} /> Profile
-                  </Link>
-                  <Link
-                    href="/courses/my-courses"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-[#94A3B8] transition-colors hover:text-white hover:bg-[#16243a]"
-                  >
-                    <BookOpen size={14} /> My Courses
-                  </Link>
-                  <button
-                    onClick={() => {
-                      dispatch(logout())
-                      setDropdownOpen(false)
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#94A3B8] transition-colors hover:text-white hover:bg-[#16243a]"
-                  >
-                    <LogOut size={14} /> Logout
-                  </button>
-                </div>
-              )}
-            </div>
+                  </Avatar>
+                </button>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-dropdown-bg py-1 shadow-lg">
+                    <Link
+                      href="/profile"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
+                    >
+                      <User size={14} /> Profile
+                    </Link>
+                    <Link
+                      href="/courses/my-courses"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
+                    >
+                      <BookOpen size={14} /> My Courses
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false)
+                        setShowLogoutModal(true)
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
+                    >
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="hidden md:block">
+                <AuthLinks />
+              </div>
+            )
           ) : (
             <div className="hidden md:block">
               <AuthLinks />
@@ -129,9 +163,9 @@ export function TopNavbar() {
             className="flex items-center justify-center md:hidden"
           >
             {mobileOpen ? (
-              <X className="size-5 text-white" />
+              <X className="size-5 text-foreground" />
             ) : (
-              <Menu className="size-5 text-white" />
+              <Menu className="size-5 text-foreground" />
             )}
           </button>
         </div>
@@ -140,8 +174,8 @@ export function TopNavbar() {
       {mobileOpen && (
         <div
           ref={mobileRef}
-          className="border-t border-[#16243a] md:hidden"
-          style={{ background: 'linear-gradient(180deg, #081527 0%, #071220 100%)' }}
+          className="border-t border-border md:hidden"
+          style={{ background: 'var(--nav-gradient)' }}
         >
           <div className="flex flex-col gap-1 px-8 py-4">
             {navLinks.map((link) => (
@@ -151,33 +185,37 @@ export function TopNavbar() {
                 onClick={() => setMobileOpen(false)}
                 className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                   isActive(link.href)
-                    ? "bg-[#16243a] text-primary"
-                    : "text-[#F8FAFC] hover:bg-[#16243a] hover:text-primary"
+                    ? "bg-muted text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-primary"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <div className="mt-2 border-t border-[#16243a] pt-3">
-              {isAuthenticated && user ? (
-                <div className="space-y-1">
-                  <Link
-                    href="/profile"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-[#94A3B8] transition-colors hover:bg-[#16243a] hover:text-white"
-                  >
-                    <User size={14} /> Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      dispatch(logout())
-                      setMobileOpen(false)
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-[#94A3B8] transition-colors hover:bg-[#16243a] hover:text-white"
-                  >
-                    <LogOut size={14} /> Logout
-                  </button>
-                </div>
+            <div className="mt-2 border-t border-border pt-3">
+              {mounted ? (
+                isAuthenticated && user ? (
+                  <div className="space-y-1">
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <User size={14} /> Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setMobileOpen(false)
+                        setShowLogoutModal(true)
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
+                ) : (
+                  <AuthLinks />
+                )
               ) : (
                 <AuthLinks />
               )}
@@ -185,6 +223,30 @@ export function TopNavbar() {
           </div>
         </div>
       )}
+      <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign Out</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to sign out?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowLogoutModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </nav>
   )
 }

@@ -18,17 +18,23 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store/hooks';
 import { playTrack } from '@/store/playerSlice';
+import { useGetCoursesQuery, useGetProductsQuery } from '@/store/api';
 import {
-  courses,
   raags,
   gurbaniItems,
   contests,
   testimonials,
-  storeProducts,
 } from '@/data';
 
 function StarRating({
@@ -117,6 +123,10 @@ function SectionHeader({
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { data: coursesData } = useGetCoursesQuery({ page: 1, limit: 4 });
+  const courses = coursesData?.courses ?? [];
+  const { data: productsData } = useGetProductsQuery({ page: 1, limit: 3 });
+  const storeProducts = productsData?.products ?? [];
 
   const stagger = {
     visible: { transition: { staggerChildren: 0.15 } },
@@ -197,7 +207,7 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="outline"
-                className="h-11 border border-white px-6 text-sm font-medium text-white transition-all duration-200 hover:shadow-[0_0_24px_-4px_rgba(255,255,255,0.3)] active:scale-[0.96]"
+                className="h-11 border border-white/40 bg-white/[0.06] px-6 text-sm font-medium text-white/90 backdrop-blur-sm transition-all duration-200 hover:border-white/60 hover:bg-white/[0.1] hover:text-white active:scale-[0.96]"
                 onClick={() => router.push('/courses')}
               >
                 View Courses
@@ -245,7 +255,7 @@ export default function HomePage() {
             title="Featured Courses"
             subtitle="Start your journey with our top courses"
           />
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
             {courses.slice(0, 4).map((course) => (
               <Card
                 key={course.id}
@@ -284,53 +294,56 @@ export default function HomePage() {
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
           <SectionHeader
-            title="Popular Raags"
+            title="31 Raags"
             subtitle="Explore the foundation of Gurmat Sangeet"
           />
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
-            {raags.slice(0, 6).map((raag) => (
-              <div
-                key={raag.id}
-                className="w-56 shrink-0 rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-              >
-                <div className="flex h-28 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                  <Music className="size-7 text-muted-foreground" />
-                </div>
-                <div className="mt-3 space-y-1">
-                  <h3 className="font-semibold text-foreground">
-                    {raag.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Thaat: {raag.thaat}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="size-3" />
-                    <span>{raag.time}</span>
+          <Carousel opts={{ align: "start", loop: true, watchDrag: true }} className="mt-6 w-full">
+            <CarouselContent className="-ml-4">
+              {raags.map((raag) => (
+                <CarouselItem key={raag.id} className="basis-auto pl-4">
+                  <div className="w-56 rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
+                    <div className="flex h-28 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
+                      <Music className="size-7 text-muted-foreground" />
+                    </div>
+                    <div className="mt-3 space-y-1">
+                      <h3 className="font-semibold text-foreground">
+                        {raag.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Thaat: {raag.thaat}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="size-3" />
+                        <span>{raag.time}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                      onClick={() =>
+                        dispatch(
+                          playTrack({
+                            id: raag.id,
+                            title: raag.name,
+                            artist: raag.artist,
+                            audioUrl: raag.audioUrl,
+                            image: raag.image,
+                            duration: raag.duration,
+                          }),
+                        )
+                      }
+                    >
+                      <Play className="size-3" />
+                      Listen
+                    </Button>
                   </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                  onClick={() =>
-                    dispatch(
-                      playTrack({
-                        id: raag.id,
-                        title: raag.name,
-                        artist: raag.artist,
-                        audioUrl: raag.audioUrl,
-                        image: raag.image,
-                        duration: raag.duration,
-                      }),
-                    )
-                  }
-                >
-                  <Play className="size-3" />
-                  Listen
-                </Button>
-              </div>
-            ))}
-          </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="rounded-full border-border text-muted-foreground hover:text-foreground" />
+            <CarouselNext className="rounded-full border-border text-muted-foreground hover:text-foreground" />
+          </Carousel>
         </div>
       </section>
 
@@ -443,7 +456,7 @@ export default function HomePage() {
             title="What Our Students Say"
             subtitle="Hear from our community"
           />
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
             {testimonials.map((t) => (
               <div
                 key={t.id}
@@ -485,7 +498,7 @@ export default function HomePage() {
               View All
             </Button>
           </div>
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
             {storeProducts.slice(0, 3).map((product) => (
               <div
                 key={product.id}
@@ -516,7 +529,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border bg-gradient-to-t from-[#0a1628] to-transparent py-8 text-center">
+      <footer className="border-t border-border bg-gradient-to-t from-background to-transparent py-8 text-center">
         <p className="text-sm text-muted-foreground">
           &copy; 2026 Raag Vidyalaya. All rights reserved.
         </p>

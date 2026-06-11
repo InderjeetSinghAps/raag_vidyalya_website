@@ -6,13 +6,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { authService } from "@/services/auth"
+import { AuthLayout } from "@/components/auth/AuthLayout"
+import { AuthHeader } from "@/components/auth/AuthHeader"
+import { GoldDivider } from "@/components/auth/GoldDivider"
+import { GlassInput } from "@/components/auth/GlassInput"
+import { GoldButton } from "@/components/auth/GoldButton"
+import { useForgotPasswordMutation } from "@/store/api"
 
 const forgotSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -21,10 +20,11 @@ const forgotSchema = z.object({
 type ForgotForm = z.infer<typeof forgotSchema>
 
 export default function ForgotPasswordPage() {
+  const [forgotPassword, { isLoading: isSubmitting }] = useForgotPasswordMutation()
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ForgotForm>({
     resolver: zodResolver(forgotSchema),
   })
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotForm) => {
     try {
-      await authService.forgotPassword(data.email)
+      await forgotPassword({ email: data.email }).unwrap()
       toast.success("OTP sent to your email")
       router.push(`/verify-otp?email=${encodeURIComponent(data.email)}&type=2`)
     } catch {
@@ -42,40 +42,37 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your email and we&apos;ll send you a reset link
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? "Sending..." : "Send Reset Link"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center text-sm">
-            <Link href="/login" className="text-primary hover:underline">
-              Back to Sign In
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthLayout>
+      <AuthHeader
+        title="Forgot Password"
+        subtitle="Enter your email and we'll send you a reset link"
+      />
+      <GoldDivider />
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <GlassInput
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+
+        <GoldButton isSubmitting={isSubmitting} loadingText="Sending...">
+          Send Reset Link
+        </GoldButton>
+      </form>
+
+      <p className="text-center text-sm text-white/40">
+        Remember your password?{" "}
+        <Link
+          href="/login"
+          className="font-semibold text-[#D4A44A] transition-colors hover:text-[#F5D485]"
+        >
+          Sign In
+        </Link>
+      </p>
+    </AuthLayout>
   )
 }

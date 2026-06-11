@@ -34,7 +34,7 @@ export function CartSheet() {
         </SheetHeader>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {items.length === 0 ? (
-            <p className="text-center text-[#94A3B8] text-sm">
+            <p className="text-center text-muted-foreground text-sm">
               Your cart is empty
             </p>
           ) : (
@@ -44,7 +44,7 @@ export function CartSheet() {
                 className="flex gap-3 items-center"
               >
                   <Image
-                    src={item.product.image}
+                    src={item.product.images[0] || ''}
                     alt={item.product.name}
                     width={56}
                     height={56}
@@ -52,10 +52,10 @@ export function CartSheet() {
                     unoptimized
                   />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {item.product.name}
                   </p>
-                  <p className="text-sm text-[#06B6D4]">
+                  <p className="text-sm text-cyan">
                     &#x20B9;{item.product.price}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -73,7 +73,7 @@ export function CartSheet() {
                     >
                       <Minus />
                     </Button>
-                    <span className="text-sm text-white w-6 text-center">
+                    <span className="text-sm text-foreground w-6 text-center">
                       {item.quantity}
                     </span>
                     <Button
@@ -104,14 +104,14 @@ export function CartSheet() {
           )}
         </div>
         {items.length > 0 && (
-          <div className="border-t border-[#1E293B] p-4">
+          <div className="border-t border-border p-4">
             <div className="flex justify-between text-sm mb-4">
-              <span className="text-[#94A3B8]">Total</span>
-              <span className="text-white font-medium">
+              <span className="text-muted-foreground">Total</span>
+              <span className="text-foreground font-medium">
                 &#x20B9;{total.toFixed(2)}
               </span>
             </div>
-            <Button className="w-full bg-[#06B6D4] text-black hover:bg-[#06B6D4]/80">
+            <Button className="w-full bg-cyan text-black hover:bg-cyan/80">
               Checkout
             </Button>
           </div>

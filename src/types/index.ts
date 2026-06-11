@@ -4,6 +4,22 @@ export interface User {
   name: string
   email: string
   avatar?: string
+  profileImage?: string
+  gender?: string
+  age?: number
+  phoneNumber?: string
+  countryCode?: string
+}
+
+export interface VideoTutorial {
+  id: string
+  title: string
+  description: string
+  thumbnail?: string
+  duration?: string
+  videoUrl: string
+  instructor?: string
+  createdAt: string
 }
 
 export interface Course {
@@ -11,27 +27,32 @@ export interface Course {
   title: string
   description: string
   instructor: string
-  duration: string
-  level: 'Beginner' | 'Intermediate' | 'Advanced'
-  image: string
+  instructorAvatar?: string
   price: number
+  isFree: boolean
+  category: string
+  level: string
+  thumbnail?: string
+  tags: string[]
+  benefits: string[]
+  prerequisites: string[]
+  learningOutcomes: string[]
+  enrollmentCount: number
   rating: number
-  enrolledCount: number
-  modules: Module[]
+  ratingCount: number
+  videoCount: number
+  videos: CourseVideo[]
+  isEnrolled: boolean
+  canWatchFull: boolean
+  requiresLogin: boolean
 }
 
-export interface Module {
+export interface CourseVideo {
   id: string
   title: string
-  lessons: Lesson[]
-}
-
-export interface Lesson {
-  id: string
-  title: string
-  duration: string
-  videoUrl?: string
-  audioUrl?: string
+  description: string
+  order: number
+  videoUrl: string
 }
 
 export interface Raag {
@@ -69,9 +90,11 @@ export interface StoreProduct {
   description: string
   price: number
   originalPrice?: number
-  image: string
+  images: string[]
   category: string
-  inStock: boolean
+  tags?: string[]
+  sellerName?: string
+  sellerAvatar?: string
 }
 
 export interface CartItem {

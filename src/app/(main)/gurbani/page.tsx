@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAppDispatch } from "@/store/hooks"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { playTrack, showMiniPlayer } from "@/store/playerSlice"
 import { gurbaniItems } from "@/data"
+import { getGurbaniTranslation } from "@/data/translations"
 
 const categories = ["All", "Shabad", "Asa Di Var", "Rehras", "Kirtan Sohila"] as const
 
@@ -26,6 +27,7 @@ const categoryMap: Record<string, string> = {
 export default function GurbaniPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const lang = useAppSelector((s) => s.language)
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("All")
 
@@ -57,7 +59,7 @@ export default function GurbaniPage() {
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-balance text-2xl font-bold text-white">Gurbani Daily Path</h1>
+          <h1 className="text-balance text-2xl font-bold text-foreground">Gurbani Daily Path</h1>
           <p className="mt-1 text-sm text-muted-foreground">Daily hymns and scriptures</p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -66,44 +68,48 @@ export default function GurbaniPage() {
             placeholder="Search by title, gurmukhi, raag, or artist..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-[#1E293B] bg-[#0B1220] pl-10 text-[#94A3B8] placeholder:text-[#64748B]"
+            className="border-border bg-background pl-10 text-muted-foreground placeholder:text-muted-foreground/80"
           />
         </div>
       </div>
 
       <Tabs value={category} onValueChange={setCategory}>
-<TabsList className="bg-[#0B1220]/80 w-full justify-center rounded-none p-1">
-      {categories.map((cat, i) => (
-        <>
-          {i > 0 && <span key={`sep-${i}`} className="select-none px-1 text-[#1E293B] text-xs">|</span>}
-          <TabsTrigger className="rounded-none px-3 text-xs font-medium text-[#64748B] transition-all duration-200 data-active:text-primary data-active:font-semibold hover:text-[#94A3B8]" key={cat} value={cat}>
-            {cat}
-          </TabsTrigger>
-        </>
-      ))}
-    </TabsList>
+        <TabsList className="flex w-full justify-center gap-3 bg-transparent p-0">
+          {categories.map((cat) => (
+            <TabsTrigger
+              key={cat}
+              value={cat}
+              className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:border-border hover:text-foreground"
+            >
+              {cat}
+            </TabsTrigger>
+          ))}
+        </TabsList>
       </Tabs>
 
-      <div className="mt-4">
-        <div className="divide-y divide-[#1E293B] rounded-xl border border-[#1E293B] bg-[#0B1220]">
-          {filtered.map((item) => (
+      <div className="mt-8 mb-4">
+        <div className="divide-y divide-border rounded-xl border border-border bg-background">
+          {filtered.map((item) => {
+            const tr = getGurbaniTranslation(item.id, lang)
+            const title = tr?.title ?? item.title
+            return (
             <div
               key={item.id}
               className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-white/[0.02]"
               onClick={() => router.push(`/gurbani/${item.id}`)}
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#000000]">
-                <Image className="size-5 text-[#64748B]" />
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background">
+                <Image className="size-5 text-muted-foreground/80" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-white">{item.title}</h3>
-                <p className="truncate text-xs text-[#64748B]">{item.gurmukhi}</p>
+                <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                <p className="truncate text-xs text-muted-foreground/80">{item.gurmukhi}</p>
                 <div className="mt-1 flex items-center gap-3">
                   <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
                     {item.raag}
                   </Badge>
-                  <span className="text-[10px] text-[#64748B]">{item.artist}</span>
-                  <span className="text-[10px] text-[#64748B]">{item.duration}</span>
+                  <span className="text-[10px] text-muted-foreground/80">{item.artist}</span>
+                  <span className="text-[10px] text-muted-foreground/80">{item.duration}</span>
                 </div>
               </div>
               <Button
@@ -118,14 +124,15 @@ export default function GurbaniPage() {
                 <Play className="size-4" />
               </Button>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Image className="mb-4 size-12 text-[#64748B]" />
-            <p className="text-lg text-[#94A3B8]">No items found</p>
-            <p className="mt-1 text-sm text-[#64748B]">Try a different search or category</p>
+            <Image className="mb-4 size-12 text-muted-foreground/80" />
+            <p className="text-lg text-muted-foreground">No items found</p>
+            <p className="mt-1 text-sm text-muted-foreground/80">Try a different search or category</p>
           </div>
         )}
       </div>

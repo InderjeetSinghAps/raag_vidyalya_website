@@ -14,7 +14,7 @@ import { contests } from "@/data"
 const statusBadge: Record<string, string> = {
   active: "border-green-500/30 bg-green-500/10 text-green-400",
   upcoming: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-  completed: "border-[#64748B]/30 bg-[#64748B]/10 text-[#64748B]",
+  completed: "border-border/30 bg-muted/10 text-muted-foreground/80",
 }
 
 const tabs = ["All", "Active", "Upcoming", "Completed"]
@@ -36,7 +36,7 @@ export default function ContestsPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-balance text-2xl font-bold text-white">Contests</h1>
+          <h1 className="text-balance text-2xl font-bold text-foreground">Contests</h1>
           <p className="mt-1 text-sm text-muted-foreground">Participate in Gurmat Sangeet competitions</p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -45,38 +45,39 @@ export default function ContestsPage() {
             placeholder="Search contests..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-[#1E293B] bg-[#0B1220] pl-10 text-[#94A3B8] placeholder:text-[#64748B]"
+            className="border-border bg-background pl-10 text-muted-foreground placeholder:text-muted-foreground/80"
           />
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-<TabsList className="bg-[#0B1220]/80 w-full justify-center rounded-none p-1">
-      {tabs.map((t, i) => (
-        <>
-          {i > 0 && <span key={`sep-${i}`} className="select-none px-1 text-[#1E293B] text-xs">|</span>}
-          <TabsTrigger className="rounded-none px-3 text-xs font-medium text-[#64748B] transition-all duration-200 data-active:text-primary data-active:font-semibold hover:text-[#94A3B8]" key={t} value={t}>
-            {t}
-          </TabsTrigger>
-        </>
-      ))}
-    </TabsList>
+        <TabsList className="flex w-full justify-center gap-3 bg-transparent p-0">
+          {tabs.map((t) => (
+            <TabsTrigger
+              key={t}
+              value={t}
+              className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:border-border hover:text-foreground"
+            >
+              {t}
+            </TabsTrigger>
+          ))}
+        </TabsList>
       </Tabs>
 
-      <div className="mt-4">
+      <div className="mt-8 mb-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((contest) => (
             <Card
               key={contest.id}
               size="sm"
-              className="border-[#1E293B] bg-[#0B1220] transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)]"
+              className="border-border bg-background transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)]"
             >
-              <div className="flex h-32 items-center justify-center rounded-t-xl bg-[#0B1220]">
-                <ImageIcon className="size-10 text-[#64748B]" />
+              <div className="flex h-32 items-center justify-center rounded-t-xl bg-background">
+                <ImageIcon className="size-10 text-muted-foreground/80" />
               </div>
               <CardContent className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-white">{contest.title}</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{contest.title}</h3>
                   <Badge className={`border text-[10px] uppercase tracking-wider ${statusBadge[contest.status] || ""}`}>
                     {contest.status}
                   </Badge>
@@ -85,7 +86,7 @@ export default function ContestsPage() {
                   <Trophy className="size-3.5" />
                   {contest.prize}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#64748B]">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground/80">
                   <span className="flex items-center gap-1">
                     <Calendar className="size-3" />
                     {contest.deadline}
@@ -112,9 +113,9 @@ export default function ContestsPage() {
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Trophy className="mb-4 size-12 text-[#64748B]" />
-            <p className="text-lg text-[#94A3B8]">No contests found</p>
-            <p className="mt-1 text-sm text-[#64748B]">Try a different search or filter</p>
+            <Trophy className="mb-4 size-12 text-muted-foreground/80" />
+            <p className="text-lg text-muted-foreground">No contests found</p>
+            <p className="mt-1 text-sm text-muted-foreground/80">Try a different search or filter</p>
           </div>
         )}
       </div>

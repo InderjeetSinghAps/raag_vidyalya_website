@@ -5,27 +5,7 @@ export function AuthLinks() {
     <div className="flex items-center gap-3">
       <Link
         href="/login"
-        style={{
-          width: '90px',
-          height: '38px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid var(--color-primary, #D4A44A)',
-          borderRadius: '0.5rem',
-          color: 'var(--color-primary, #D4A44A)',
-          fontSize: '14px',
-          fontWeight: 500,
-          transition: 'all 0.3s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--color-primary)'
-          e.currentTarget.style.color = '#081527'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent'
-          e.currentTarget.style.color = 'var(--color-primary, #D4A44A)'
-        }}
+        className="inline-flex items-center justify-center w-[90px] h-[38px] text-sm font-medium rounded-lg border border-primary text-primary transition-all hover:bg-primary hover:text-primary-foreground"
       >
         Login
       </Link>

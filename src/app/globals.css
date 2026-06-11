@@ -1,11 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,200..1000&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
+:root {
+  --background: #F8F6F0;
+  --foreground: #1A1A2E;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A2E;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A2E;
+  --primary: #D4A44A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F0EC;
+  --secondary-foreground: #1A1A2E;
+  --muted: #F1F0EC;
+  --muted-foreground: #6B7280;
+  --accent: #F1F0EC;
+  --accent-foreground: #1A1A2E;
+  --destructive: #EF4444;
+  --destructive-foreground: #F8FAFC;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #D4A44A;
+  --radius: 0.5rem;
+
+  --gold: #D4A44A;
+  --gold-light: #F5D485;
+  --gold-dark: #C49A3A;
+  --cyan: #06B6D4;
+
+  --nav-gradient: linear-gradient(180deg, rgba(248,246,240,0.95) 0%, rgba(248,246,240,0.95) 100%);
+  --nav-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --dropdown-bg: #FFFFFF;
+  --dropdown-hover: #F1F0EC;
+  --dropdown-border: #E5E7EB;
+}
+
+.dark {
+  --background: #0B1220;
+  --foreground: #F8FAFC;
+  --card: #0F1A2E;
+  --card-foreground: #F8FAFC;
+  --popover: #0F1A2E;
+  --popover-foreground: #F8FAFC;
+  --primary: #D4A44A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #16243A;
+  --secondary-foreground: #F8FAFC;
+  --muted: #16243A;
+  --muted-foreground: #94A3B8;
+  --accent: #16243A;
+  --accent-foreground: #F8FAFC;
+  --destructive: #7F1D1D;
+  --destructive-foreground: #F8FAFC;
+  --border: #1E293B;
+  --input: #1E293B;
+  --ring: #D4A44A;
+
+  --gold: #D4A44A;
+  --gold-light: #F5D485;
+  --gold-dark: #C49A3A;
+  --cyan: #06B6D4;
+
+  --nav-gradient: linear-gradient(180deg, #081527 0%, #071220 100%);
+  --nav-shadow: 0 8px 32px rgba(0,0,0,.25);
+  --dropdown-bg: #081527;
+  --dropdown-hover: #16243A;
+  --dropdown-border: #16243A;
+}
+
+@theme inline {
   --font-sans: 'Nunito Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-display: 'Nunito Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+  --color-cyan: var(--cyan);
+  --color-dropdown-bg: var(--dropdown-bg);
+  --color-dropdown-hover: var(--dropdown-hover);
+  --color-dropdown-border: var(--dropdown-border);
 }

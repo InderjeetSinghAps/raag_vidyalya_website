@@ -1,98 +1,84 @@
 "use client"
 
 import Image from "next/image"
+import { motion } from "framer-motion"
 import { ReactNode } from "react"
-import { cn } from "@/lib/utils"
-
-const MIN_WIDTH = "min-w-[900px]"
-const CARD_MAX_W = "max-w-[1100px]"
-const CARD_H = "h-[650px]"
 
 interface AuthLayoutProps {
   children: ReactNode
-  rightPanelContent: ReactNode
-  className?: string
+  rightPanelContent?: ReactNode
 }
 
 export function AuthLayout({ children, rightPanelContent }: AuthLayoutProps) {
   return (
-    <div className="flex h-screen w-screen items-stretch overflow-hidden bg-background">
-      {/* LEFT PANEL — login.png with deep indigo overlay + gold texture */}
-      <div className={cn("relative hidden w-1/2 lg:flex", MIN_WIDTH)}>
-        {/* Base image */}
+    <div className="flex h-screen w-screen overflow-hidden">
+      {/* LEFT PANEL — Visual branding with image */}
+      <div className="relative hidden w-1/2 lg:block">
         <Image
           src="/login.png"
           alt=""
           fill
-          className="object-cover object-center"
+          className="object-cover"
           priority
           sizes="50vw"
         />
 
-        {/* Gold ornamental corner lines */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#05091A]/90 via-[#0B1730]/60 to-[#0B1730]/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05091A] via-transparent to-transparent" />
+
+        {/* Gold corner accents */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-          <span className="absolute top-6 left-6 h-16 w-px bg-gradient-to-b from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute top-6 left-6 h-px w-16 bg-gradient-to-r from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute bottom-6 left-6 h-16 w-px bg-gradient-to-t from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute bottom-6 left-6 h-px w-16 bg-gradient-to-r from-transparent to-[#D4A44A]/20" />
-          <span className="absolute top-6 right-6 h-16 w-px bg-gradient-to-b from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute top-6 right-6 h-px w-16 bg-gradient-to-l from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute bottom-6 right-6 h-16 w-px bg-gradient-to-t from-[#D4A44A]/20 to-transparent" />
-          <span className="absolute bottom-6 right-6 h-px w-16 bg-gradient-to-l from-transparent to-[#D4A44A]/20" />
+          <span className="absolute left-8 top-8 h-16 w-px bg-gradient-to-b from-[#D4A44A]/30 to-transparent" />
+          <span className="absolute left-8 top-8 h-px w-16 bg-gradient-to-r from-[#D4A44A]/30 to-transparent" />
+          <span className="absolute bottom-8 right-8 h-16 w-px bg-gradient-to-t from-[#D4A44A]/30 to-transparent" />
+          <span className="absolute bottom-8 right-8 h-px w-16 bg-gradient-to-l from-[#D4A44A]/30 to-transparent" />
         </div>
 
-        {/* Deeper indigo overlay — shows more of the floral pattern */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(160deg, #05091A 0%, #0B1730 35%, rgba(11,23,48,0.55) 62%, transparent 78%, #05091A 100%)",
-          }}
-        />
-
-        {/* Subtle gold texture overlay — mimics the Persian floral pattern */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 15% 45%, #D4A44A 0%, transparent 55%), radial-gradient(ellipse at 75% 25%, #D4A44A 0%, transparent 50%), radial-gradient(ellipse at 50% 85%, #D4A44A 0%, transparent 60%)",
-          }}
-        />
-
-        {/* Bottom fade for smooth transition */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-28"
-          style={{ background: "linear-gradient(to top, #05091A 0%, transparent 100%)" }}
-        />
-
-        {/* Foreground content */}
-        <div className="relative z-10 flex flex-col justify-center p-12">
-          <h1 className="font-display text-balance text-4xl font-bold leading-tight text-white">
-            Welcome to
-            <br />
-            <span
-              className="bg-gradient-to-r from-[#D4A44A] to-[#F5D485] bg-clip-text text-transparent"
-              style={{ textShadow: "none" }}
-            >
+        {/* Brand content */}
+        <div className="absolute bottom-16 left-12 right-12 z-10">
+          <h1 className="font-display text-[2rem] font-bold leading-tight text-white">
+            Welcome to{" "}
+            <span className="bg-gradient-to-r from-[#D4A44A] to-[#F5D485] bg-clip-text text-transparent">
               Raag Vidyalaya
             </span>
           </h1>
-          <p
-            className="mt-4 max-w-sm text-pretty text-sm leading-relaxed"
-            style={{ color: "rgba(203,213,225,0.8)" }}
-          >
-            Immerse yourself in the divine art of Gurmat Sangeet. Learn ancient raags,
-            sacred hymns, and timeless melodies from the comfort of your home.
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/50">
+            Immerse yourself in the divine art of Gurmat Sangeet. Learn ancient
+            raags, sacred hymns, and timeless melodies from the comfort of your
+            home.
           </p>
         </div>
       </div>
 
-      {/* RIGHT PANEL — warm gallery parchment */}
-      <div
-        className="flex flex-1 items-center justify-center overflow-y-auto"
-        style={{ background: "#F5EFE0" }}
-      >
-        <div className="w-full max-w-md p-8">{children}</div>
+      {/* RIGHT PANEL — Liquid Glass */}
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-background via-secondary to-background dark:from-[#0B1220] dark:via-[#0F1A2E] dark:to-[#0B1730]">
+        {/* Ambient liquid light orbs */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-[#D4A44A]/[0.04] blur-[120px]" />
+          <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] rounded-full bg-[#D4A44A]/[0.03] blur-[100px]" />
+          <div
+            className="absolute inset-0 opacity-[0.02]"
+            style={{
+              backgroundImage:
+                "radial-gradient(ellipse at 20% 50%, #D4A44A 0%, transparent 50%), radial-gradient(ellipse at 80% 30%, #D4A44A 0%, transparent 40%)",
+            }}
+          />
+        </div>
+
+        {/* Optional content above form */}
+        {rightPanelContent && <div className="relative mb-8">{rightPanelContent}</div>}
+
+        {/* Glass form card */}
+        <div className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card/80 p-10 shadow-lg backdrop-blur-2xl dark:border-white/[0.06] dark:bg-white/[0.04] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6)]">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
+            className="space-y-6"
+          >
+            {children}
+          </motion.div>
+        </div>
       </div>
     </div>
   )
