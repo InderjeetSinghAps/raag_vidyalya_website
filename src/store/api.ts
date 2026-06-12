@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
-import { API_BASE_URL } from '@/lib/constants'
-import { getYouTubeThumbnail, getGoogleDriveDirectUrl } from '@/lib/video'
+import { API_BASE_URL, DEVICE_TYPE } from '@/lib/constants'
+import { getYouTubeThumbnail, getGoogleDriveDirectUrl, getGoogleDriveAudioUrl } from '@/lib/video'
 import { STORAGE_KEY, setUser, logout } from '@/store/authSlice'
-import type { User, StoreProduct, VideoTutorial, Course, CourseVideo } from '@/types'
+import type { User, StoreProduct, VideoTutorial, Course, CourseVideo, GurbaniCollection, BandishItem, RaagApiItem, RaagsApiResponse } from '@/types'
 
 interface ProductApiItem {
   _id: string
@@ -22,6 +22,33 @@ interface ProductApiItem {
   user: { _id: string; userName: string; profileImage?: string }
 }
 
+interface GurbaniApiResponse {
+  success: boolean
+  message: string
+  gurbani: GurbaniCollection[]
+  total: number
+  totalPages: number
+  page: number
+}
+
+function mapGurbaniCollection(raw: GurbaniCollection): GurbaniCollection {
+  return {
+    _id: raw._id,
+    title: raw.title,
+    titleGurmukhi: raw.titleGurmukhi,
+    description: raw.description,
+    baanis: (raw.baanis || []).map((b) => ({
+      _id: b._id,
+      title: b.title,
+      gurmukhi: b.gurmukhi,
+      transliteration: b.transliteration,
+      translation: b.translation,
+      audioUrl: b.audioUrl || '',
+      pdfUrl: b.pdfUrl || '',
+    })),
+  }
+}
+
 interface ProductsApiResponse {
   success: boolean
   message: string
@@ -37,6 +64,13 @@ interface ProductDetailApiResponse {
   product: ProductApiItem
 }
 
+interface UserDetailApiResponse {
+  success: boolean
+  message: string
+  user: User
+  todayTip: string
+}
+
 interface VideoApiItem {
   _id: string
   title: string
@@ -46,6 +80,26 @@ interface VideoApiItem {
   videoUrl: string
   instructor?: string
   createdAt: string
+}
+
+// Bookmark related types
+interface BookmarkItem {
+  _id: string
+  userId: string
+  title: string
+  videoUrl: string
+  description: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface BookmarksApiResponse {
+  success: boolean
+  message: string
+  bookmarks: BookmarkItem[]
+  total: number
+  page: number
+  totalPages: number
 }
 
 interface CourseVideoApiItem {
@@ -82,6 +136,8 @@ interface CourseApiItem {
     name: string
     profile?: string
     coverProfile?: string
+    email?: string
+    phoneNumber?: string
     profession?: string
   }
   isEnrolled: boolean
@@ -95,6 +151,53 @@ interface CoursesApiResponse {
   courses: CourseApiItem[]
   pagination: { currentPage: number; pageSize: number; totalPages: number; totalCourses: number; hasNextPage: boolean; hasPrevPage: boolean }
   totalVideosOnPage: number
+}
+
+interface EnrollmentProgress {
+  completedLessonOrders: number[]
+  completionPercentage: number
+  lastAccessedAt: string
+}
+
+interface EnrolledCourseApiItem {
+  _id: string
+  title: string
+  description: string
+  courseType: number
+  price: number
+  category: string
+  thumbnail: string
+  level: string
+  tags: string[]
+  benefits: string[]
+  prerequisites: string[]
+  learningOutcomes: string[]
+  enrollmentCount: number
+  rating: { average: number; count: number }
+  videoCount: number
+  videosCount: number
+  videos: CourseVideoApiItem[]
+  isEnrolled: boolean
+  courseTypeName: string
+  access: { canWatchFull: boolean; requiresLogin: boolean; requiresSubscriptionOrPurchase: boolean }
+}
+
+interface EnrollmentApiItem {
+  _id: string
+  user: string
+  course: EnrolledCourseApiItem
+  progress: EnrollmentProgress
+  createdAt: string
+  updatedAt: string
+}
+
+interface EnrollmentsApiResponse {
+  success: boolean
+  message: string
+  enrollments: EnrollmentApiItem[]
+  total: number
+  page: number
+  totalPages: number
 }
 
 interface CourseDetailApiResponse {
@@ -112,7 +215,7 @@ interface VideosApiResponse {
   totalPages: number
 }
 
-function resolveImageUrl(path: string): string {
+export function resolveImageUrl(path: string): string {
   const driveUrl = getGoogleDriveDirectUrl(path)
   if (driveUrl !== path) return driveUrl
   if (path.startsWith('/')) {
@@ -128,6 +231,9 @@ function mapCourse(c: CourseApiItem): Course {
     description: c.description,
     instructor: c.collaborators?.name || '',
     instructorAvatar: c.collaborators?.profile ? resolveImageUrl(c.collaborators.profile) : undefined,
+    instructorEmail: c.collaborators?.email,
+    instructorPhone: c.collaborators?.phoneNumber,
+    instructorProfession: c.collaborators?.profession,
     price: c.price,
     isFree: c.courseTypeName === 'free' || c.price === 0,
     category: c.category || 'General',
@@ -151,6 +257,75 @@ function mapCourse(c: CourseApiItem): Course {
     isEnrolled: c.isEnrolled || false,
     canWatchFull: c.access?.canWatchFull || false,
     requiresLogin: c.access?.requiresLogin || false,
+    requiresSubscriptionOrPurchase: c.access?.requiresSubscriptionOrPurchase || false,
+    courseTypeName: c.courseTypeName || '',
+  }
+}
+
+function mapCourseFromEnrollment(c: EnrolledCourseApiItem): Course {
+  return {
+    id: c._id,
+    title: c.title,
+    description: c.description,
+    instructor: '',
+    instructorAvatar: undefined as string | undefined,
+    instructorEmail: undefined,
+    instructorPhone: undefined,
+    instructorProfession: undefined,
+    price: c.price,
+    isFree: c.courseTypeName === 'free' || c.price === 0,
+    category: c.category || 'General',
+    level: c.level ? c.level.charAt(0).toUpperCase() + c.level.slice(1) : '',
+    thumbnail: c.thumbnail ? resolveImageUrl(c.thumbnail) : undefined,
+    tags: c.tags || [],
+    benefits: c.benefits || [],
+    prerequisites: c.prerequisites || [],
+    learningOutcomes: c.learningOutcomes || [],
+    enrollmentCount: c.enrollmentCount || 0,
+    rating: c.rating?.average || 0,
+    ratingCount: c.rating?.count || 0,
+    videoCount: c.videoCount || 0,
+    videos: (c.videos || []).map((v) => ({
+      id: v._id,
+      title: v.title,
+      description: v.description,
+      order: v.order,
+      videoUrl: v.videoUrl,
+    })),
+    isEnrolled: true,
+    canWatchFull: c.access?.canWatchFull || false,
+    requiresLogin: c.access?.requiresLogin || false,
+    requiresSubscriptionOrPurchase: c.access?.requiresSubscriptionOrPurchase || false,
+    courseTypeName: c.courseTypeName || '',
+  }
+}
+
+function emptyCourse(id: string): Course {
+  return {
+    id, title: '', description: '', instructor: '',
+    instructorAvatar: undefined, instructorEmail: undefined,
+    instructorPhone: undefined, instructorProfession: undefined,
+    price: 0, isFree: false, category: 'General', level: '',
+    thumbnail: undefined, tags: [], benefits: [], prerequisites: [],
+    learningOutcomes: [], enrollmentCount: 0, rating: 0, ratingCount: 0,
+    videoCount: 0, videos: [], isEnrolled: true, canWatchFull: false,
+    requiresLogin: false, requiresSubscriptionOrPurchase: false,
+    courseTypeName: '',
+  }
+}
+
+function mapEnrollment(e: EnrollmentApiItem) {
+  const c = e.course
+  const course = c && typeof c === 'object'
+    ? mapCourseFromEnrollment(c)
+    : emptyCourse(typeof c === 'string' ? c : e._id)
+  return {
+    _id: e._id,
+    user: e.user,
+    course,
+    progress: e.progress || { completedLessonOrders: [], completionPercentage: 0, lastAccessedAt: '' },
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
   }
 }
 
@@ -167,6 +342,58 @@ function mapProduct(p: ProductApiItem): StoreProduct {
     sellerName: p.user?.userName,
     sellerAvatar: p.user?.profileImage ? resolveImageUrl(p.user.profileImage) : undefined,
   }
+}
+
+function extractAuthResponse(
+  response: Record<string, unknown>,
+): { user: User; token: string; refreshToken: string } | null {
+  const tryGet = (paths: string[][]): unknown | undefined => {
+    for (const path of paths) {
+      let val: unknown = response
+      for (const key of path) {
+        if (val && typeof val === 'object' && key in val) {
+          val = (val as Record<string, unknown>)[key]
+        } else {
+          val = undefined
+          break
+        }
+      }
+      if (val !== undefined && val !== null) return val
+    }
+    return undefined
+  }
+
+  const token = tryGet([
+    ['token'],
+    ['access_token'],
+    ['user', 'access_token'],
+    ['user', 'token'],
+    ['data', 'access_token'],
+    ['data', 'token'],
+  ]) as string | undefined
+
+  const refreshToken = tryGet([
+    ['refreshToken'],
+    ['refresh_token'],
+    ['user', 'refresh_token'],
+    ['user', 'refreshToken'],
+    ['data', 'refresh_token'],
+    ['data', 'refreshToken'],
+  ]) as string | undefined
+
+  const user = tryGet([
+    ['user'],
+    ['data', 'user'],
+  ]) as User | undefined
+
+  if (!token || !user) return null
+
+  if (user.userName && !user.name) {
+    user.name = user.userName
+  }
+
+  const { access_token, refresh_token, ...cleanUser } = user as User & { access_token?: string; refresh_token?: string }
+  return { user: cleanUser, token, refreshToken: refreshToken || '' }
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -197,6 +424,40 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   const result = await rawBaseQuery(args, api, extraOptions)
   if (result.error?.status === 401) {
     if (typeof window !== 'undefined') {
+      const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        try {
+          const state = JSON.parse(raw)
+          if (state.refreshToken) {
+            const refreshResult = await rawBaseQuery(
+              {
+                url: '/user/refresh-token',
+                method: 'POST',
+                body: { refreshToken: state.refreshToken },
+              },
+              api,
+              extraOptions,
+            )
+            if (refreshResult.data) {
+              const refreshed = extractAuthResponse(refreshResult.data as Record<string, unknown>)
+              if (refreshed) {
+                const newState = { ...state, token: refreshed.token, refreshToken: refreshed.refreshToken }
+                const isSession = !!sessionStorage.getItem(STORAGE_KEY)
+                const serialized = JSON.stringify(newState)
+                if (isSession) {
+                  sessionStorage.setItem(STORAGE_KEY, serialized)
+                } else {
+                  localStorage.setItem(STORAGE_KEY, serialized)
+                }
+                return rawBaseQuery(args, api, extraOptions)
+              }
+            }
+          }
+          console.warn('[api] 401 — token refresh failed or no refresh token', state)
+        } catch {
+          /* fall through to redirect */
+        }
+      }
       localStorage.removeItem(STORAGE_KEY)
       sessionStorage.removeItem(STORAGE_KEY)
       window.location.href = '/login'
@@ -208,47 +469,55 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User', 'Product', 'Video', 'Course'],
+  tagTypes: ['User', 'Product', 'Video', 'Course', 'Gurbani', 'Raag', 'Enrollment', 'Bookmark'],
   endpoints: (builder) => ({
     login: builder.mutation<
-      { user: User; token: string },
+      { user: User; token: string; refreshToken: string },
       { email: string; password: string; rememberMe?: boolean; deviceToken?: string; deviceType?: number }
     >({
-      query: ({ email, password, deviceToken = 'NA', deviceType = 2 }) => ({
-        url: '/user/user-login',
-        method: 'POST',
-        body: { email, password, deviceToken, deviceType },
-      }),
-      async onQueryStarted({ rememberMe }, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled
-          const { access_token, ...user } = data.user as { access_token: string } & User
-          dispatch(setUser({ user, token: access_token, rememberMe: rememberMe ?? true }))
-        } catch {
-          /* error handled by caller */
-        }
-      },
+  query: ({ email, password, deviceToken = 'NA', deviceType = DEVICE_TYPE }) => ({
+    url: '/user/user-login',
+    method: 'POST',
+    body: { email, password, deviceToken, deviceType },
+  }),
+  transformResponse: (response) => {
+    const result = extractAuthResponse(response as Record<string, unknown>)
+    if (!result) throw new Error('Login response missing token or user')
+    return result
+  },
+  async onQueryStarted({ rememberMe }, { dispatch, queryFulfilled }) {
+    try {
+      const { data } = await queryFulfilled
+      dispatch(setUser({ user: data.user, token: data.token, refreshToken: data.refreshToken, rememberMe: rememberMe ?? true }))
+    } catch {
+      /* error handled by caller */
+    }
+  },
     }),
 
-    signup: builder.mutation<{ user: User; token: string }, { name: string; email: string; password: string }>({
-      query: (body) => ({
-        url: '/user/user-signup',
-        method: 'POST',
-        body,
-      }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled
-          const { access_token, ...user } = data.user as { access_token: string } & User
-          dispatch(setUser({ user, token: access_token, rememberMe: true }))
-        } catch {
-          /* error handled by caller */
-        }
-      },
-    }),
+signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { name: string; email: string; password: string }>({
+  query: (body) => ({
+    url: '/user/user-signup',
+    method: 'POST',
+    body,
+  }),
+  transformResponse: (response) => {
+    const result = extractAuthResponse(response as Record<string, unknown>)
+    if (!result) throw new Error('Signup response missing token or user')
+    return result
+  },
+  async onQueryStarted(_, { dispatch, queryFulfilled }) {
+    try {
+      const { data } = await queryFulfilled
+      dispatch(setUser({ user: data.user, token: data.token, refreshToken: data.refreshToken, rememberMe: true }))
+    } catch {
+      /* error handled by caller */
+    }
+  },
+}),
 
     verifyOtp: builder.mutation<
-      { user: User; token: string },
+      { user: User; token: string; refreshToken: string },
       { email: string; otp: string; type?: 1 | 2 }
     >({
       query: ({ email, otp, type = 1 }) => ({
@@ -256,11 +525,15 @@ export const api = createApi({
         method: 'POST',
         body: { email, otp, type },
       }),
+      transformResponse: (response) => {
+        const result = extractAuthResponse(response as Record<string, unknown>)
+        if (!result) throw new Error('Verify OTP response missing token or user')
+        return result
+      },
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
-          const { access_token, ...user } = data.user as { access_token: string } & User
-          dispatch(setUser({ user, token: access_token, rememberMe: true }))
+          dispatch(setUser({ user: data.user, token: data.token, refreshToken: data.refreshToken, rememberMe: true }))
         } catch {
           /* error handled by caller */
         }
@@ -300,7 +573,7 @@ export const api = createApi({
     }),
 
     socialLogin: builder.mutation<
-      { user: User; token: string },
+      { user: User; token: string; refreshToken: string },
       {
         email: string
         provider: string
@@ -314,13 +587,17 @@ export const api = createApi({
       query: (body) => ({
         url: '/user/social-login',
         method: 'POST',
-        body: { ...body, deviceType: body.deviceType ?? 2, deviceToken: body.deviceToken ?? 'NA' },
+        body: { ...body, deviceType: body.deviceType ?? DEVICE_TYPE, deviceToken: body.deviceToken ?? 'NA' },
       }),
+      transformResponse: (response) => {
+        const result = extractAuthResponse(response as Record<string, unknown>)
+        if (!result) throw new Error('Social login response missing token or user')
+        return result
+      },
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
-          const { access_token, ...user } = data.user as { access_token: string } & User
-          dispatch(setUser({ user, token: access_token, rememberMe: true }))
+          dispatch(setUser({ user: data.user, token: data.token, refreshToken: data.refreshToken, rememberMe: true }))
         } catch {
           /* error handled by caller */
         }
@@ -329,6 +606,7 @@ export const api = createApi({
 
     getUserDetail: builder.query<User, void>({
       query: () => '/user/user-detail',
+      transformResponse: (response: UserDetailApiResponse) => response.user,
       providesTags: ['User'],
     }),
 
@@ -369,9 +647,13 @@ export const api = createApi({
 
     getProducts: builder.query<
       { products: StoreProduct[]; total: number; totalPages: number; page: number },
-      { page?: number; limit?: number }
+      { page?: number; limit?: number; search?: string }
     >({
-      query: ({ page = 1, limit = 10 }) => ({ url: '/product', params: { page, limit } }),
+      query: ({ page = 1, limit = 10, search }) => {
+        const params: Record<string, string | number> = { page, limit }
+        if (search) params.search = search
+        return { url: '/product', params }
+      },
       transformResponse: (response: ProductsApiResponse) => ({
         products: response.products.map(mapProduct),
         total: response.total,
@@ -395,9 +677,13 @@ export const api = createApi({
         totalPages: number
         page: number
       },
-      { page?: number; limit?: number }
+      { page?: number; limit?: number; search?: string }
     >({
-      query: ({ page = 1, limit = 10 }) => ({ url: '/video-tutorial', params: { page, limit } }),
+      query: ({ page = 1, limit = 10, search }) => {
+        const params: Record<string, string | number> = { page, limit }
+        if (search) params.search = search
+        return { url: '/video-tutorial', params }
+      },
       transformResponse: (response: VideosApiResponse) => ({
         videos: response.videos.map((v) => ({
           id: v._id,
@@ -418,13 +704,12 @@ export const api = createApi({
 
     getCourses: builder.query<
       { courses: Course[]; total: number; totalPages: number; page: number },
-      { page?: number; limit?: number; search?: string; type?: string; level?: string }
+      { page?: number; limit?: number; search?: string; filter?: string }
     >({
-      query: ({ page = 1, limit = 10, search, type, level }) => {
+      query: ({ page = 1, limit = 10, search, filter }) => {
         const params: Record<string, string | number> = { page, limit }
         if (search) params.search = search
-        if (type && type !== 'all') params[type] = ''
-        if (level && level !== 'all') params[level] = ''
+        if (filter) params.filter = filter
         return { url: '/course', params }
       },
       transformResponse: (response: CoursesApiResponse) => ({
@@ -441,6 +726,51 @@ export const api = createApi({
       transformResponse: (response: CourseDetailApiResponse) =>
         response.course ? mapCourse(response.course) : null,
       providesTags: ['Course'],
+    }),
+
+    getGurbaniCollections: builder.query<GurbaniCollection[], void>({
+      query: () => '/gurbani',
+      transformResponse: (response: GurbaniApiResponse) =>
+        (response.gurbani || []).map(mapGurbaniCollection),
+      providesTags: ['Gurbani'],
+    }),
+
+    getRaags: builder.query<RaagsApiResponse, void>({
+      query: () => '/raag/all',
+      transformResponse: (response: RaagsApiResponse) => ({
+        ...response,
+        raags: response.raags.map((r) => ({
+          ...r,
+          audioUrl: r.audioUrl ? getGoogleDriveAudioUrl(r.audioUrl) : '',
+          listOfBandish: r.listOfBandish.map((b) => ({
+            ...b,
+            audioUrl: b.audioUrl ? getGoogleDriveAudioUrl(b.audioUrl) : null,
+          })),
+        })),
+      }),
+      providesTags: ['Raag'],
+    }),
+
+    getMyEnrollments: builder.query<
+      { enrollments: ReturnType<typeof mapEnrollment>[]; total: number; totalPages: number; page: number },
+      { page?: number; limit?: number }
+    >({
+      query: ({ page = 1, limit = 10 }) => ({
+        url: '/enrollment',
+        params: { page, limit },
+      }),
+      transformResponse: (response: EnrollmentsApiResponse) => ({
+        enrollments: response.enrollments.map(mapEnrollment),
+        total: response.total,
+        totalPages: response.totalPages,
+        page: response.page,
+      }),
+      providesTags: ['Enrollment'],
+    }),
+
+    getCourseVideoBookmarks: builder.query<{ bookmarks: BookmarkItem[] }, void>({
+      query: () => '/course-video-bookmarks',
+      providesTags: ['Bookmark'],
     }),
 
   }),
@@ -463,4 +793,8 @@ export const {
   useGetVideosQuery,
   useGetCoursesQuery,
   useGetCourseByIdQuery,
+  useGetGurbaniCollectionsQuery,
+  useGetRaagsQuery,
+  useGetMyEnrollmentsQuery,
+  useGetCourseVideoBookmarksQuery,
 } = api

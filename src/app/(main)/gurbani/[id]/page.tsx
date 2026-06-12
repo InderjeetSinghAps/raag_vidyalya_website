@@ -1,27 +1,38 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Image, Play, Pause } from "lucide-react"
+import { ArrowLeft, BookOpen, Play, Pause, ExternalLink, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { useGetGurbaniCollectionsQuery } from "@/store/api"
 import { playTrack, showMiniPlayer } from "@/store/playerSlice"
-import { setCurrentItem } from "@/store/gurbaniSlice"
-import { gurbaniItems } from "@/data"
+import { getGoogleDriveAudioUrl } from "@/lib/video"
 
 export default function GurbaniDetailPage() {
   const params = useParams()
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { data: collections, isLoading } = useGetGurbaniCollectionsQuery()
 
-  const item = gurbaniItems.find((g) => g.id === params.id)
+  const allBaanis = (collections ?? []).flatMap((c) => c.baanis)
+  const baani = allBaanis.find((b) => b._id === params.id)
+
   const isPlaying = useAppSelector(
-    (s) => s.player.isPlaying && s.player.currentTrack?.id === item?.id
+    (s) => s.player.isPlaying && s.player.currentTrack?.id === baani?._id
   )
 
-  if (!item) {
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground/60" />
+      </div>
+    )
+  }
+
+  if (!baani) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Image className="mb-4 size-12 text-muted-foreground/80" />
+        <BookOpen className="mb-4 size-12 text-muted-foreground/80" />
         <p className="text-lg text-muted-foreground">Gurbani not found</p>
         <Button
           variant="outline"
@@ -35,16 +46,16 @@ export default function GurbaniDetailPage() {
   }
 
   const handlePlayPause = () => {
-    dispatch(setCurrentItem(item))
     if (!isPlaying) {
+      const audioUrl = getGoogleDriveAudioUrl(baani.audioUrl) || baani.audioUrl
       dispatch(
         playTrack({
-          id: item.id,
-          title: item.title,
-          artist: item.artist,
-          audioUrl: item.audioUrl,
-          image: item.image,
-          duration: item.duration,
+          id: baani._id,
+          title: baani.title,
+          artist: "",
+          audioUrl,
+          image: "",
+          duration: "",
         })
       )
       dispatch(showMiniPlayer())
@@ -63,18 +74,24 @@ export default function GurbaniDetailPage() {
 
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         <div className="flex h-56 w-56 items-center justify-center rounded-2xl bg-background sm:h-64 sm:w-64">
-          <Image className="size-20 text-cyan-400/30" />
+          <BookOpen className="size-20 text-cyan-400/30" />
         </div>
 
         <div className="space-y-3">
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{item.title}</h1>
-          <p className="text-xl font-medium text-foreground">{item.gurmukhi}</p>
-          <p className="text-sm text-muted-foreground">{item.transliteration}</p>
-          <p className="mx-auto max-w-lg text-sm text-muted-foreground/80">{item.translation}</p>
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{baani.title}</h1>
+          {baani.gurmukhi && (
+            <p className="text-xl font-medium text-foreground/90">{baani.gurmukhi}</p>
+          )}
+          {baani.transliteration && (
+            <p className="text-sm text-muted-foreground">{baani.transliteration}</p>
+          )}
+          {baani.translation && (
+            <p className="mx-auto max-w-lg text-sm text-muted-foreground/80">{baani.translation}</p>
+          )}
         </div>
       </div>
 
-      <div className="mt-auto pt-8">
+      <div className="mt-auto flex flex-col items-center gap-3 pt-8">
         <Button
           variant="default"
           className="w-full bg-cyan-500 text-foreground hover:bg-cyan-400"
@@ -92,6 +109,18 @@ export default function GurbaniDetailPage() {
             </>
           )}
         </Button>
+
+        {baani.pdfUrl && (
+          <a
+            href={baani.pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-cyan-400 transition-colors hover:text-cyan-300"
+          >
+            <ExternalLink className="size-4" />
+            View PDF
+          </a>
+        )}
       </div>
     </div>
   )

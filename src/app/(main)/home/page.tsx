@@ -29,13 +29,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store/hooks';
 import { playTrack } from '@/store/playerSlice';
-import { useGetCoursesQuery, useGetProductsQuery } from '@/store/api';
+import { getGoogleDriveAudioUrl } from '@/lib/video';
 import {
-  raags,
-  gurbaniItems,
-  contests,
-  testimonials,
-} from '@/data';
+  useGetCoursesQuery,
+  useGetProductsQuery,
+  useGetGurbaniCollectionsQuery,
+} from '@/store/api';
+import { raags, contests, testimonials } from '@/data';
 
 function StarRating({
   rating,
@@ -119,14 +119,35 @@ function SectionHeader({
     </div>
   );
 }
+const appLinks = [
+  {
+    label: 'Play Store',
+    url: 'https://play.google.com/store/apps/details?id=com.raag.raagvidalya',
+    icon: '/google-play-badge.png',
+  },
+  {
+    label: 'App Store',
+    url: 'https://apps.apple.com/us/app/raag-vidyalya/id6773085164',
+    icon: '/apple-store-badge.png',
+  },
+];
 
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { data: coursesData } = useGetCoursesQuery({ page: 1, limit: 4 });
+  const { data: coursesData } = useGetCoursesQuery({
+    page: 1,
+    limit: 4,
+  });
   const courses = coursesData?.courses ?? [];
-  const { data: productsData } = useGetProductsQuery({ page: 1, limit: 3 });
+  const { data: productsData } = useGetProductsQuery({
+    page: 1,
+    limit: 3,
+  });
   const storeProducts = productsData?.products ?? [];
+  const { data: gurbaniCollections } =
+    useGetGurbaniCollectionsQuery();
+  const firstBaani = gurbaniCollections?.[0]?.baanis?.[0];
 
   const stagger = {
     visible: { transition: { staggerChildren: 0.15 } },
@@ -297,10 +318,16 @@ export default function HomePage() {
             title="31 Raags"
             subtitle="Explore the foundation of Gurmat Sangeet"
           />
-          <Carousel opts={{ align: "start", loop: true, watchDrag: true }} className="mt-6 w-full">
+          <Carousel
+            opts={{ align: 'start', loop: true, watchDrag: true }}
+            className="mt-6 w-full"
+          >
             <CarouselContent className="-ml-4">
               {raags.map((raag) => (
-                <CarouselItem key={raag.id} className="basis-auto pl-4">
+                <CarouselItem
+                  key={raag.id}
+                  className="basis-auto pl-4"
+                >
                   <div className="w-56 rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
                     <div className="flex h-28 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
                       <Music className="size-7 text-muted-foreground" />
@@ -354,48 +381,51 @@ export default function HomePage() {
             subtitle="Sacred hymn for today"
           />
           <div className="mt-6">
-            {gurbaniItems.length > 0 &&
-              (() => {
-                const item = gurbaniItems[0];
-                return (
-                  <div className="flex items-center gap-4 rounded-xl bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]">
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                      <Music className="size-5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-foreground">
-                        {item.title}
-                      </h3>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {item.gurmukhi}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
-                        {item.transliteration}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                      onClick={() =>
-                        dispatch(
-                          playTrack({
-                            id: item.id,
-                            title: item.title,
-                            artist: item.artist,
-                            audioUrl: item.audioUrl,
-                            image: item.image,
-                            duration: item.duration,
-                          }),
-                        )
-                      }
-                    >
-                      <Play className="size-3" />
-                      Listen Now
-                    </Button>
-                  </div>
-                );
-              })()}
+            {firstBaani && (
+              <div className="flex items-center gap-4 rounded-xl bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
+                  <Music className="size-5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-foreground">
+                    {firstBaani.title}
+                  </h3>
+                  {firstBaani.gurmukhi && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {firstBaani.gurmukhi}
+                    </p>
+                  )}
+                  {firstBaani.transliteration && (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
+                      {firstBaani.transliteration}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                  onClick={() =>
+                    dispatch(
+                      playTrack({
+                        id: firstBaani._id,
+                        title: firstBaani.title,
+                        artist: '',
+                        audioUrl:
+                          getGoogleDriveAudioUrl(
+                            firstBaani.audioUrl,
+                          ) || firstBaani.audioUrl,
+                        image: '',
+                        duration: '',
+                      }),
+                    )
+                  }
+                >
+                  <Play className="size-3" />
+                  Listen Now
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -533,6 +563,31 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground">
           &copy; 2026 Raag Vidyalaya. All rights reserved.
         </p>
+        <div className="relative">
+          {/* <h2 className="font-display text-balance text-2xl font-bold text-foreground sm:text-3xl">
+            Download the App
+          </h2> */}
+          {/* <p className="mt-2 text-sm text-muted-foreground">
+            Access Raag Vidyalaya on the go.
+          </p> */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            {appLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center leading-none"
+              >
+                <img
+                  src={link.icon}
+                  alt={link.label}
+                  className="block h-10 w-auto"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
       </footer>
     </div>
   );

@@ -160,7 +160,7 @@ export default function AboutPage() {
                 Download the App
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Access Raag Vidyalaya on the go. Available on both platforms.
+                Access Raag Vidyalaya on the go.
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                 {appLinks.map((link) => (

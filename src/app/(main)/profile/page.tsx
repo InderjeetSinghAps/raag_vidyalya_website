@@ -31,7 +31,7 @@ import {
   EyeOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -53,7 +53,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { updateUser } from "@/store/authSlice"
 import { setLanguage, Language } from "@/store/languageSlice"
-import { useGetUserDetailQuery, useUpdateUserMutation, useChangePasswordMutation, useSetPasswordMutation } from "@/store/api"
+import { useGetUserDetailQuery, useUpdateUserMutation, useChangePasswordMutation, useSetPasswordMutation, resolveImageUrl } from "@/store/api"
 import { toast } from "sonner"
 import { contactInfo } from "@/data/contact"
 
@@ -84,7 +84,7 @@ const menuGroups: { title: string; icon: React.ElementType; items: MenuItem[] }[
     icon: GraduationCap,
     items: [
       { label: "My Enrollments", icon: BookOpen, action: "link", value: "/courses/my-courses" },
-      { label: "Bookmarks", icon: Bookmark, action: "toast", value: "Bookmarks coming soon!" },
+      { label: "Bookmarks", icon: Bookmark, action: "link", value: "/courses/bookmarks" },
       // { label: "My Downloads", icon: Download, action: "toast", value: "Downloads coming soon!" },
     ],
   },
@@ -170,6 +170,7 @@ function EditProfileModal({ open, onClose }: { open: boolean; onClose: () => voi
         payload.phoneNumber = phoneNumber
         payload.countryCode = phoneCode
       }
+      if (photoPreview) payload.profileImage = photoPreview
 
       if (Object.keys(payload).length > 0) {
         await updateUserApi(payload).unwrap()
@@ -794,11 +795,11 @@ function ContactSupportModal({ open, onClose }: { open: boolean; onClose: () => 
 const cardClass =
   "rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl dark:border-white/[0.06] dark:bg-white/[0.04]"
 
-const userStats = [
-  { icon: BookOpen, value: "3", label: "Courses" },
-  { icon: Music, value: "12", label: "Raags" },
-  { icon: Clock, value: "48", label: "Hours" },
-]
+// const userStats = [
+//   { icon: BookOpen, value: "3", label: "Courses" },
+//   { icon: Music, value: "12", label: "Raags" },
+//   { icon: Clock, value: "48", label: "Hours" },
+// ]
 
 const staggerItem = {
   hidden: { opacity: 0, y: 12 },
@@ -809,7 +810,10 @@ export default function ProfilePage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((s) => s.auth)
+  const [mounted, setMounted] = useState(false)
   const [activeModal, setActiveModal] = useState<string | null>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const { data: serverUser } = useGetUserDetailQuery()
 
@@ -843,17 +847,28 @@ export default function ProfilePage() {
       >
         <div className="relative mb-5">
           <div className="pointer-events-none absolute -inset-3 rounded-full bg-[#D4A44A]/[0.08] blur-2xl" aria-hidden="true" />
-          <Avatar size="lg" className="size-20 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-2xl font-bold text-foreground">
-              {user?.name ? user.name.charAt(0).toUpperCase() : <User className="size-8" />}
-            </AvatarFallback>
-          </Avatar>
+          {mounted && (user?.profileImage || user?.avatar) ? (
+            <img
+              src={resolveImageUrl((user?.profileImage || user?.avatar)!)}
+              alt={user?.name || "User"}
+              referrerPolicy="no-referrer"
+              className="size-20 rounded-full object-cover ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
+            />
+          ) : (
+            <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
+              {mounted && user?.name ? (
+                <span className="text-2xl font-bold text-foreground">{user.name.charAt(0).toUpperCase()}</span>
+              ) : (
+                <User className="size-8 text-muted-foreground/60" />
+              )}
+            </div>
+          )}
         </div>
 
-        <h1 className="text-xl font-bold text-foreground">{user?.name || "User"}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground/80">{user?.email || ""}</p>
+        <h1 className="text-xl font-bold text-foreground">{mounted && user?.name ? user.name : "User"}</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground/80">{mounted ? user?.email || "" : ""}</p>
 
-        <div className="mt-5 flex gap-6">
+        {/* <div className="mt-5 flex gap-6">
           {userStats.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center">
               <stat.icon className="size-4 text-muted-foreground/50" />
@@ -865,7 +880,7 @@ export default function ProfilePage() {
               </span>
             </div>
           ))}
-        </div>
+        </div> */}
 
         <div className="mt-5 flex items-center gap-2">
           <span className="h-px w-8 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
@@ -919,7 +934,7 @@ export default function ProfilePage() {
                     </div>
 
                     <span className="flex-1 text-left transition-all duration-200 group-hover/item:translate-x-0.5">
-                      {item.label}
+                      {item.label === "Set Password" && user?.hasPassword ? "Change Password" : item.label}
                     </span>
 
                     <ChevronRight className="size-4 text-muted-foreground/30 transition-all duration-200 group-hover/item:translate-x-0.5 group-hover/item:text-primary" />

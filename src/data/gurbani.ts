@@ -1,6 +1,4 @@
-import { GurbaniItem } from '@/types'
-
-export const gurbaniItems: GurbaniItem[] = [
+export const gurbaniItems = [
   {
     id: 'g1',
     title: 'Japji Sahib',

@@ -19,8 +19,8 @@ import { toast } from "sonner"
 import { contactInfo, socialLinks } from "@/data/contact"
 
 const socialIcons: Record<string, React.ElementType> = {
-  "play-store": Smartphone,
-  "app-store": ExternalLink,
+  // "play-store": Smartphone,
+  // "app-store": ExternalLink,
   instagram: Camera,
   youtube: Play,
 }
@@ -165,7 +165,7 @@ export default function ContactPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Your message..."
                     rows={5}
-                    className="resize-none rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15]"
+                    className="resize-none h-30 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15]"
                   />
                 </div>
                 <Button
@@ -191,7 +191,7 @@ export default function ContactPage() {
             Follow Us
           </p>
           <div className="flex flex-wrap gap-3">
-            {socialLinks.map((link) => {
+            {socialLinks?.slice(2,4).map((link) => {
               const Icon = socialIcons[link.icon] || ExternalLink
               return (
                 <a

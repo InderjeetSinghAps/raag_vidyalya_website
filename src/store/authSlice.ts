@@ -6,23 +6,24 @@ export const STORAGE_KEY = 'auth_state'
 interface AuthState {
   user: User | null
   token: string | null
+  refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
 }
 
 export function loadFromStorage(): AuthState {
-  if (typeof window === 'undefined') return { user: null, token: null, isAuthenticated: false, isLoading: false }
+  if (typeof window === 'undefined') return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
   let raw: string | null = null
   try {
     raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
   } catch {
-    return { user: null, token: null, isAuthenticated: false, isLoading: false }
+    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
   }
-  if (!raw) return { user: null, token: null, isAuthenticated: false, isLoading: false }
+  if (!raw) return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
   try {
     return JSON.parse(raw)
   } catch {
-    return { user: null, token: null, isAuthenticated: false, isLoading: false }
+    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
   }
 }
 
@@ -48,21 +49,24 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: loadFromStorage(),
   reducers: {
-    setUser: (state, action: PayloadAction<{ user: User; token: string; rememberMe?: boolean }>) => {
-      if (action.payload.user.userName && !action.payload.user.name) {
-        action.payload.user.name = action.payload.user.userName
+    setUser: (state, action: PayloadAction<{ user: User; token: string; refreshToken?: string; rememberMe?: boolean }>) => {
+      const { user, token, refreshToken, rememberMe } = action.payload
+      if (user.userName && !user.name) {
+        user.name = user.userName
       }
-      state.user = action.payload.user
-      state.token = action.payload.token
+      state.user = user
+      state.token = token
+      state.refreshToken = refreshToken ?? null
       state.isAuthenticated = true
       persistToStorage(
-        { user: state.user, token: state.token, isAuthenticated: true, isLoading: false },
-        action.payload.rememberMe ?? true,
+        { user, token, refreshToken: refreshToken ?? null, isAuthenticated: true, isLoading: false },
+        rememberMe ?? true,
       )
     },
     logout: (state) => {
       state.user = null
       state.token = null
+      state.refreshToken = null
       state.isAuthenticated = false
       clearStorage()
     },

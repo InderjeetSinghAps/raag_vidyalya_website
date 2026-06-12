@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Play, Search, Clock, User as UserIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,26 +11,27 @@ import { useGetVideosQuery } from "@/store/api"
 export default function VideosPage() {
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [page, setPage] = useState(1)
 
-  const { data, isLoading: loading } = useGetVideosQuery({ page, limit: 12 })
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 600)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const { data, isLoading: loading } = useGetVideosQuery({
+    page,
+    limit: 12,
+    search: debouncedSearch || undefined,
+  })
   const videos = data?.videos ?? []
   const totalPages = data?.totalPages ?? 1
-
-  const filtered = videos.filter((v) => {
-    const q = search.toLowerCase()
-    return (
-      v.title.toLowerCase().includes(q) ||
-      v.description.toLowerCase().includes(q) ||
-      v.instructor?.toLowerCase().includes(q)
-    )
-  })
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-balance text-2xl font-bold text-foreground">Video Tutorials</h1>
+          <h1 className="text-balance text-2xl font-bold text-foreground">Videos</h1>
           <p className="mt-1 text-sm text-muted-foreground">Learn Gurmat Sangeet through expert-led videos</p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -52,7 +53,7 @@ export default function VideosPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((video) => (
+              {videos.map((video) => (
                 <div
                   key={video.id}
                   onClick={() => router.push(`/videos/${video.id}`)}
@@ -118,7 +119,7 @@ export default function VideosPage() {
               ))}
             </div>
 
-            {filtered.length === 0 && (
+            {videos.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Play className="mb-4 size-12 text-muted-foreground/80" />
                 <p className="text-lg text-muted-foreground">No videos found</p>

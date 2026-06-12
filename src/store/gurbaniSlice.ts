@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { GurbaniItem } from '@/types'
+import { GurbaniBaani } from '@/types'
 
 interface GurbaniState {
-  items: GurbaniItem[]
-  currentItem: GurbaniItem | null
+  items: GurbaniBaani[]
+  currentItem: GurbaniBaani | null
   isFullScreen: boolean
   isLoading: boolean
 }
@@ -19,10 +19,10 @@ const gurbaniSlice = createSlice({
   name: 'gurbani',
   initialState,
   reducers: {
-    setGurbaniItems: (state, action: PayloadAction<GurbaniItem[]>) => {
+    setGurbaniItems: (state, action: PayloadAction<GurbaniBaani[]>) => {
       state.items = action.payload
     },
-    setCurrentItem: (state, action: PayloadAction<GurbaniItem | null>) => {
+    setCurrentItem: (state, action: PayloadAction<GurbaniBaani | null>) => {
       state.currentItem = action.payload
     },
     toggleFullScreen: (state) => {

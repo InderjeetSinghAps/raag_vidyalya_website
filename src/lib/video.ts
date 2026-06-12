@@ -32,6 +32,17 @@ export function getGoogleDriveDirectUrl(url: string): string {
   return `https://lh3.googleusercontent.com/d/${id}=w800`
 }
 
+export function getGoogleDriveAudioUrl(url: string): string {
+  const idMatch =
+    url.match(/\/file\/d\/([^/]+)/) ||
+    url.match(/\/open\?id=([^&]+)/) ||
+    url.match(/\/uc\?id=([^&]+)/)
+  const id = idMatch?.[1]
+  if (!id) return url
+  const driveUrl = `https://drive.google.com/uc?export=download&id=${id}`
+  return `/api/proxy-audio?url=${encodeURIComponent(driveUrl)}`
+}
+
 export function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null
 

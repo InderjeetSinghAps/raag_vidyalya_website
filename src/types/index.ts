@@ -9,6 +9,7 @@ export interface User {
   age?: number
   phoneNumber?: string
   countryCode?: string
+  hasPassword?: boolean
 }
 
 export interface VideoTutorial {
@@ -28,6 +29,9 @@ export interface Course {
   description: string
   instructor: string
   instructorAvatar?: string
+  instructorEmail?: string
+  instructorPhone?: string
+  instructorProfession?: string
   price: number
   isFree: boolean
   category: string
@@ -45,6 +49,8 @@ export interface Course {
   isEnrolled: boolean
   canWatchFull: boolean
   requiresLogin: boolean
+  requiresSubscriptionOrPurchase: boolean
+  courseTypeName: string
 }
 
 export interface CourseVideo {
@@ -71,17 +77,22 @@ export interface Raag {
   artist: string
 }
 
-export interface GurbaniItem {
-  id: string
+export interface GurbaniBaani {
+  _id: string
   title: string
-  gurmukhi: string
-  transliteration: string
-  translation: string
-  raag: string
-  artist: string
+  gurmukhi?: string
+  transliteration?: string
+  translation?: string
   audioUrl: string
-  duration: string
-  image: string
+  pdfUrl: string
+}
+
+export interface GurbaniCollection {
+  _id: string
+  title: string
+  titleGurmukhi?: string
+  description: string
+  baanis: GurbaniBaani[]
 }
 
 export interface StoreProduct {
@@ -111,6 +122,39 @@ export interface Contest {
   image: string
   participants: number
   status: 'upcoming' | 'active' | 'completed'
+}
+
+export interface BandishItem {
+  sId: number
+  bandishName: string
+  pdfUrl: string | null
+  audioUrl: string | null
+}
+
+export interface RaagApiItem {
+  _id: string
+  id: number
+  name: string
+  thaat: string
+  sur: string
+  wargitSur: string | null
+  jaati: string
+  time: string
+  vaadi: string
+  samvadi: string
+  aroh: string
+  avroh: string
+  audioUrl: string | null
+  listOfBandish: BandishItem[]
+}
+
+export interface RaagsApiResponse {
+  success: boolean
+  message: string
+  raags: RaagApiItem[]
+  total: number
+  page: number
+  totalPages: number
 }
 
 export interface Testimonial {

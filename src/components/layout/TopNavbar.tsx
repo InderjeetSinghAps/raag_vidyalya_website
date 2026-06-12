@@ -6,9 +6,9 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
 import { Menu, X, User, BookOpen, LogOut } from "lucide-react"
 import { useAppSelector, useAppDispatch } from "@/store/hooks"
-import { useLogoutMutation } from "@/store/api"
+import { useLogoutMutation, resolveImageUrl } from "@/store/api"
 import { logout } from "@/store/authSlice"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +25,7 @@ const navLinks = [
   { label: "Courses", href: "/courses" },
   { label: "Gurmat Sangeet", href: "/gurmat-sangeet" },
   { label: "Gurbani", href: "/gurbani" },
-  { label: "Video Tutorials", href: "/videos" },
+  { label: "Videos", href: "/videos" },
   { label: "Our Store", href: "/store" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -114,11 +114,18 @@ export function TopNavbar() {
             isAuthenticated && user ? (
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 focus:outline-none">
-                  <Avatar size="sm">
-        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-          {(user?.name || user?.userName || '?').charAt(0).toUpperCase()}
-        </AvatarFallback>
-                  </Avatar>
+        {user?.profileImage || user?.avatar ? (
+          <img
+            src={resolveImageUrl((user?.profileImage || user?.avatar)!)}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="size-6 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+            {(user?.name || user?.userName || '?').charAt(0).toUpperCase()}
+          </div>
+        )}
                 </button>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-dropdown-bg py-1 shadow-lg">

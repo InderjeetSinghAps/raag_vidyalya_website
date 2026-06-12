@@ -32,7 +32,7 @@ export default function VideoDetailPage() {
             className="mt-4 border-border text-muted-foreground"
             onClick={() => router.push("/videos")}
           >
-            Back to Tutorials
+            Back to Videos
           </Button>
         </div>
       </div>
@@ -46,7 +46,7 @@ export default function VideoDetailPage() {
         className="mb-6 flex items-center gap-2 text-sm text-muted-foreground/80 transition-colors hover:text-muted-foreground"
       >
         <ArrowLeft className="size-4" />
-        Back to Tutorials
+        Back to Videos
       </button>
 
       {video.videoUrl ? (

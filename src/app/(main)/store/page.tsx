@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ShoppingBag, ShoppingCart, Search, MessageCircle, Loader2 } from "lucide-react"
@@ -18,19 +18,28 @@ export default function StorePage() {
   const dispatch = useAppDispatch()
   const cartCount = useAppSelector((s) => s.cart.items.length)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [page, setPage] = useState(1)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
 
-  const { data, isLoading: loading, error } = useGetProductsQuery({ page, limit: 12 })
+  useEffect(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 600)
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    }
+  }, [search])
+
+  const { data, isLoading: loading, error } = useGetProductsQuery({
+    page,
+    limit: 12,
+    search: debouncedSearch || undefined,
+  })
   const products = data?.products ?? []
   const totalPages = data?.totalPages ?? 1
-
-  const filtered = products.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase())
-    return matchSearch
-  })
 
   const handleSendMessage = (e: React.MouseEvent, productId: string) => {
     e.stopPropagation()
@@ -63,7 +72,7 @@ export default function StorePage() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((product) => (
+              {products.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => router.push(`/store/${product.id}`)}
@@ -105,7 +114,8 @@ export default function StorePage() {
                             className="mr-1 inline-block rounded-full object-cover align-text-bottom"
                           />
                         )}
-                        {product.sellerName}
+                        {/* {product.sellerName} */}
+                        <span className="text-primary">{product.sellerName} </span>
                       </p>
                     )}
                     {product.tags && product.tags.length > 0 && (
@@ -134,7 +144,7 @@ export default function StorePage() {
               ))}
             </div>
 
-            {filtered.length === 0 && (
+            {products.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <ShoppingBag className="mb-4 size-12 text-muted-foreground/80" />
                 <p className="text-lg text-muted-foreground">No products found</p>

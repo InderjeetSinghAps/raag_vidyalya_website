@@ -15,6 +15,8 @@ interface PlayerState {
   isMiniPlayer: boolean
   volume: number
   progress: number
+  currentTime: number
+  duration: number
   playlist: TrackInfo[]
 }
 
@@ -24,6 +26,8 @@ const initialState: PlayerState = {
   isMiniPlayer: false,
   volume: 0.8,
   progress: 0,
+  currentTime: 0,
+  duration: 0,
   playlist: [],
 }
 
@@ -52,6 +56,12 @@ const playerSlice = createSlice({
     setProgress: (state, action: PayloadAction<number>) => {
       state.progress = action.payload
     },
+    setCurrentTime: (state, action: PayloadAction<number>) => {
+      state.currentTime = action.payload
+    },
+    setDuration: (state, action: PayloadAction<number>) => {
+      state.duration = action.payload
+    },
     setVolume: (state, action: PayloadAction<number>) => {
       state.volume = Math.max(0, Math.min(1, action.payload))
     },
@@ -69,7 +79,7 @@ const playerSlice = createSlice({
 
 export const {
   playTrack, pauseTrack, resumeTrack, stopTrack,
-  setProgress, setVolume, toggleMiniPlayer, showMiniPlayer,
+  setProgress, setCurrentTime, setDuration, setVolume, toggleMiniPlayer, showMiniPlayer,
   setPlaylist,
 } = playerSlice.actions
 export default playerSlice.reducer

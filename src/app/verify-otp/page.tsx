@@ -59,7 +59,11 @@ function VerifyOtpForm() {
     }
     try {
       await verifyOtp({ email, otp: code, type: otpType }).unwrap()
-      router.push("/home")
+      if (otpType === 2) {
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`)
+      } else {
+        router.push("/home")
+      }
     } catch {
       toast.error("Invalid or expired OTP")
     }

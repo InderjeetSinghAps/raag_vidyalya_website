@@ -1,140 +1,120 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Image, Play, Search } from "lucide-react"
+import { BookOpen, Play, Loader2, ExternalLink, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { useAppDispatch } from "@/store/hooks"
+import { useGetGurbaniCollectionsQuery } from "@/store/api"
 import { playTrack, showMiniPlayer } from "@/store/playerSlice"
-import { gurbaniItems } from "@/data"
-import { getGurbaniTranslation } from "@/data/translations"
-
-const categories = ["All", "Shabad", "Asa Di Var", "Rehras", "Kirtan Sohila"] as const
-
-const categoryMap: Record<string, string> = {
-  g1: "Shabad",
-  g2: "Rehras",
-  g3: "Kirtan Sohila",
-  g4: "Shabad",
-  g5: "Shabad",
-  g6: "Asa Di Var",
-  g7: "Shabad",
-}
+import { getGoogleDriveAudioUrl } from "@/lib/video"
+import type { GurbaniBaani } from "@/types"
 
 export default function GurbaniPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const lang = useAppSelector((s) => s.language)
-  const [search, setSearch] = useState("")
-  const [category, setCategory] = useState("All")
+  const { data: collections, isLoading, isError } = useGetGurbaniCollectionsQuery()
 
-  const filtered = gurbaniItems.filter((item) => {
-    const matchSearch =
-      item.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.gurmukhi.toLowerCase().includes(search.toLowerCase()) ||
-      item.raag.toLowerCase().includes(search.toLowerCase()) ||
-      item.artist.toLowerCase().includes(search.toLowerCase())
-    const matchCategory = category === "All" || categoryMap[item.id] === category
-    return matchSearch && matchCategory
-  })
-
-  const handlePlay = (item: (typeof gurbaniItems)[number]) => {
+  const handlePlay = (baani: GurbaniBaani, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const audioUrl = getGoogleDriveAudioUrl(baani.audioUrl) || baani.audioUrl
     dispatch(
       playTrack({
-        id: item.id,
-        title: item.title,
-        artist: item.artist,
-        audioUrl: item.audioUrl,
-        image: item.image,
-        duration: item.duration,
+        id: baani._id,
+        title: baani.title,
+        artist: "",
+        audioUrl,
+        image: "",
+        duration: "",
       })
     )
     dispatch(showMiniPlayer())
   }
 
+  const handleViewDetail = (baaniId: string) => {
+    router.push(`/gurbani/${baaniId}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground/60" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+        <AlertCircle className="size-12 text-muted-foreground/60" />
+        <p className="text-lg text-muted-foreground">Could not load Gurbani</p>
+        <p className="text-sm text-muted-foreground/60">Please try again later</p>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-balance text-2xl font-bold text-foreground">Gurbani Daily Path</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Daily hymns and scriptures</p>
-        </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by title, gurmukhi, raag, or artist..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border bg-background pl-10 text-muted-foreground placeholder:text-muted-foreground/80"
-          />
-        </div>
+      <div className="mb-6">
+        <h1 className="text-balance text-2xl font-bold text-foreground">Gurbani</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Sacred scriptures and hymns</p>
       </div>
 
-      <Tabs value={category} onValueChange={setCategory}>
-        <TabsList className="flex w-full justify-center gap-3 bg-transparent p-0">
-          {categories.map((cat) => (
-            <TabsTrigger
-              key={cat}
-              value={cat}
-              className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:border-border hover:text-foreground"
-            >
-              {cat}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      <div className="mt-8 mb-4">
-        <div className="divide-y divide-border rounded-xl border border-border bg-background">
-          {filtered.map((item) => {
-            const tr = getGurbaniTranslation(item.id, lang)
-            const title = tr?.title ?? item.title
-            return (
-            <div
-              key={item.id}
-              className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-white/[0.02]"
-              onClick={() => router.push(`/gurbani/${item.id}`)}
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background">
-                <Image className="size-5 text-muted-foreground/80" />
-              </div>
+      <div className="space-y-4">
+        {(collections ?? []).map((collection) => (
+          <div
+            key={collection._id}
+            className="rounded-xl border border-border bg-background overflow-hidden"
+          >
+            <div className="flex items-center gap-3 px-5 py-4">
+              <BookOpen className="size-5 text-cyan-400 shrink-0" />
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-                <p className="truncate text-xs text-muted-foreground/80">{item.gurmukhi}</p>
-                <div className="mt-1 flex items-center gap-3">
-                  <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
-                    {item.raag}
-                  </Badge>
-                  <span className="text-[10px] text-muted-foreground/80">{item.artist}</span>
-                  <span className="text-[10px] text-muted-foreground/80">{item.duration}</span>
-                </div>
+                <h2 className="text-base font-semibold text-foreground">{collection.title}</h2>
+                {collection.titleGurmukhi && (
+                  <p className="text-sm text-muted-foreground/80">{collection.titleGurmukhi}</p>
+                )}
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-10 shrink-0 rounded-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handlePlay(item)
-                }}
-              >
-                <Play className="size-4" />
-              </Button>
+              <p className="text-xs text-muted-foreground/60">{collection.baanis.length} baanis</p>
             </div>
-            )
-          })}
-        </div>
 
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Image className="mb-4 size-12 text-muted-foreground/80" />
-            <p className="text-lg text-muted-foreground">No items found</p>
-            <p className="mt-1 text-sm text-muted-foreground/80">Try a different search or category</p>
+            <div className="divide-y divide-border border-t border-border">
+              {collection.baanis.map((baani) => (
+                <div
+                  key={baani._id}
+                  className="flex cursor-pointer items-center gap-4 px-5 py-3 pl-12 transition-colors hover:bg-white/[0.02]"
+                  onClick={() => handleViewDetail(baani._id)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium text-foreground">{baani.title}</h3>
+                    {baani.gurmukhi && (
+                      <p className="truncate text-xs text-muted-foreground/80">{baani.gurmukhi}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {baani.pdfUrl && (
+                      <a
+                        href={baani.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex size-8 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-cyan-400"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8 shrink-0 rounded-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
+                      onClick={(e) => handlePlay(baani, e)}
+                    >
+                      <Play className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   )
