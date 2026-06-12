@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { raags } from '@/data';
 
 const stats = [
-  { icon: Music, value: raags.length, label: 'Raags' },
-  { icon: BookOpen, value: '37+', label: 'Courses' },
+  // { icon: Music, value: raags.length, label: 'Raags' },
+  { icon: Music, value: '31', label: 'Raags' },
+  { icon: BookOpen, value: '50+', label: 'Courses' },
   { icon: Users, value: '2K+', label: 'Students' },
   { icon: Globe, value: '5+', label: 'Years' },
 ];
@@ -59,7 +60,10 @@ export default function AboutPage() {
         {/* Hero */}
         <section className="grid gap-10 lg:grid-cols-2">
           <div className="relative">
-            <div className="pointer-events-none absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#D4A44A]/[0.04] blur-[120px]" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#D4A44A]/[0.04] blur-[120px]"
+              aria-hidden="true"
+            />
 
             <h2 className="font-display text-balance text-3xl font-bold text-foreground">
               Preserving the Divine Art of Gurmat Sangeet
@@ -99,7 +103,11 @@ export default function AboutPage() {
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15, ease: [0.2, 0, 0, 1] }}
+            transition={{
+              duration: 0.5,
+              delay: 0.15,
+              ease: [0.2, 0, 0, 1],
+            }}
             className="group relative"
           >
             <div className="rounded-2xl border border-border/50 bg-card/80 p-2 shadow-lg backdrop-blur-2xl transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-[0_0_24px_-4px_rgba(212,164,74,0.15)] dark:border-white/[0.06] dark:bg-white/[0.04]">
@@ -124,7 +132,11 @@ export default function AboutPage() {
                 key={stat.label}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * i, ease: [0.2, 0, 0, 1] }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.1 * i,
+                  ease: [0.2, 0, 0, 1],
+                }}
                 className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-6 text-center backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_-4px_rgba(212,164,74,0.15)] dark:border-white/[0.06] dark:bg-white/[0.04]"
               >
                 <stat.icon className="absolute -right-4 -top-4 size-16 text-foreground/[0.03]" />
@@ -150,10 +162,17 @@ export default function AboutPage() {
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3, ease: [0.2, 0, 0, 1] }}
+            transition={{
+              duration: 0.5,
+              delay: 0.3,
+              ease: [0.2, 0, 0, 1],
+            }}
             className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-transparent p-8 text-center backdrop-blur-xl sm:p-12"
           >
-            <div className="pointer-events-none absolute -top-20 -right-20 h-[300px] w-[300px] rounded-full bg-[#D4A44A]/[0.06] blur-[100px]" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute -top-20 -right-20 h-[300px] w-[300px] rounded-full bg-[#D4A44A]/[0.06] blur-[100px]"
+              aria-hidden="true"
+            />
 
             <div className="relative">
               <h2 className="font-display text-balance text-2xl font-bold text-foreground sm:text-3xl">
@@ -171,7 +190,11 @@ export default function AboutPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center leading-none"
                   >
-                    <img src={link.icon} alt={link.label} className="block h-10 w-auto" />
+                    <img
+                      src={link.icon}
+                      alt={link.label}
+                      className="block h-10 w-auto"
+                    />
                   </a>
                 ))}
               </div>
