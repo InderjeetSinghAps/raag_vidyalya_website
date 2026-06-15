@@ -50,6 +50,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { parsePhoneNumber } from 'libphonenumber-js';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { updateUser } from '@/store/authSlice';
 import { setLanguage, Language } from '@/store/languageSlice';
@@ -202,11 +204,8 @@ function EditProfileModal({
   const [email, setEmail] = useState(user?.email || '');
   const [age, setAge] = useState(user?.age?.toString() || '');
   const [gender, setGender] = useState(user?.gender || '');
-  const [phoneCode, setPhoneCode] = useState(
-    user?.countryCode || '+91',
-  );
-  const [phoneNumber, setPhoneNumber] = useState(
-    user?.phoneNumber || '',
+  const [phoneValue, setPhoneValue] = useState(
+    user?.phoneNumber ? `${user.countryCode || '+91'}${user.phoneNumber}` : '',
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     null,
@@ -218,8 +217,11 @@ function EditProfileModal({
     setEmail(user?.email || '');
     setAge(user?.age?.toString() || '');
     setGender(user?.gender || '');
-    setPhoneCode(user?.countryCode || '+91');
-    setPhoneNumber(user?.phoneNumber || '');
+    setPhoneValue(
+      user?.phoneNumber
+        ? `${user.countryCode || '+91'}${user.phoneNumber}`
+        : '',
+    );
     setPhotoPreview(null);
   }, [open, user]);
 
@@ -235,18 +237,6 @@ function EditProfileModal({
     }
   };
 
-  const phoneCodes = [
-    '+91',
-    '+1',
-    '+44',
-    '+61',
-    '+971',
-    '+65',
-    '+977',
-    '+92',
-    '+880',
-  ];
-
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Name is required');
@@ -257,9 +247,15 @@ function EditProfileModal({
       if (name.trim() !== user?.name) payload.userName = name.trim();
       if (gender && gender !== user?.gender) payload.gender = gender;
       if (age) payload.age = Number(age);
-      if (phoneNumber) {
-        payload.phoneNumber = phoneNumber;
-        payload.countryCode = phoneCode;
+      if (phoneValue) {
+        const parsed = parsePhoneNumber(phoneValue);
+        if (parsed) {
+          payload.phoneNumber = parsed.nationalNumber;
+          payload.countryCode = `+${parsed.countryCallingCode}`;
+        } else {
+          payload.phoneNumber = phoneValue;
+          payload.countryCode = '';
+        }
       }
       if (photoPreview) payload.profileImage = photoPreview;
 
@@ -273,8 +269,10 @@ function EditProfileModal({
           email: email.trim(),
           gender,
           age: age ? Number(age) : undefined,
-          phoneNumber,
-          countryCode: phoneCode,
+          phoneNumber: phoneValue || undefined,
+          countryCode: phoneValue
+            ? `+${parsePhoneNumber(phoneValue)?.countryCallingCode || ''}`
+            : undefined,
         }),
       );
       toast.success('Profile updated');
@@ -363,9 +361,9 @@ function EditProfileModal({
                 <Input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  disabled
                   placeholder="your@email.com"
-                  className={inputClass}
+                  className={`${inputClass} cursor-not-allowed opacity-60`}
                 />
               </div>
             </div>
@@ -420,33 +418,11 @@ function EditProfileModal({
                   Phone
                 </Label>
                 <div className="flex gap-2">
-                  <Select
-                    value={phoneCode}
-                    onValueChange={(v) => v && setPhoneCode(v)}
-                  >
-                    <SelectTrigger
-                      className={selectClass + ' w-[110px] shrink-0'}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {phoneCodes.map((code) => (
-                        <SelectItem key={code} value={code}>
-                          {code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) =>
-                      setPhoneNumber(
-                        e.target.value.replace(/\D/g, ''),
-                      )
-                    }
-                    placeholder="Phone number"
-                    className={inputClass}
+                  <PhoneInput
+                    value={phoneValue}
+                    onChange={(v) => setPhoneValue(v || '')}
+                    defaultCountry="IN"
+                    className="w-full"
                   />
                 </div>
               </div>
