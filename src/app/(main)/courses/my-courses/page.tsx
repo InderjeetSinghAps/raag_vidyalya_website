@@ -98,17 +98,15 @@ export default function MyCoursesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="px-5 mt-[-25px]">
-        <Button
-          variant="ghost"
-          size="lg"
-          className="gap-1.5"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        size="lg"
+        className="gap-1.5 mb-4"
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="size-4" />
+        Back
+      </Button>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <div>

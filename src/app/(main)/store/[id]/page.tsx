@@ -16,7 +16,13 @@ export default function StoreProductPage() {
   const [selectedImage, setSelectedImage] = useState(0)
 
   const handleSendMessage = () => {
-    toast.success("Enquiry sent! We'll get back to you soon.")
+    if (!product?.sellerPhone) {
+      toast.error("Seller contact not available")
+      return
+    }
+    const clean = product.sellerPhone.replace(/\D/g, "")
+    const message = `Hello! I'm interested in the "${product.name}".\n\u{1F4CC} Description: ${product.description}\n\u{1F4B0} Price: \u20B9${product.price}${product.originalPrice ? ` (Original: \u20B9${product.originalPrice})` : ''}\n\u{1F3AF} Category: ${product.category}\nCould you please share more details or help me with the purchase?`
+    window.open(`https://api.whatsapp.com/send/?phone=${clean}&text=${encodeURIComponent(message)}`, "_blank")
   }
 
   if (loading) {

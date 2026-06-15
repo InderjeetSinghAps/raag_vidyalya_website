@@ -59,22 +59,43 @@ export function MiniPlayer() {
    if (!audio) return
 
    // Helper to log duration-related data and update Redux when valid
-   const updateDuration = () => {
-     console.log("[MiniPlayer] duration:", audio.duration)
-     console.log("[MiniPlayer] readyState:", audio.readyState)
-     console.log("[MiniPlayer] networkState:", audio.networkState)
-     const dur = audio.duration
-     if (Number.isFinite(dur) && dur > 0) {
-       dispatch(setDuration(dur))
-     }
-   }
+    const updateDuration = () => {
+      const dur = audio.duration
+      if (dur === Infinity) {
+        if (audio.seekable.length > 0) {
+          const seekableEnd = audio.seekable.end(audio.seekable.length - 1)
+          if (Number.isFinite(seekableEnd) && seekableEnd > 0) {
+            dispatch(setDuration(seekableEnd))
+            return
+          }
+        }
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1)
+          if (Number.isFinite(bufferedEnd) && bufferedEnd > 0) {
+            dispatch(setDuration(bufferedEnd))
+          }
+        }
+        return
+      }
+      if (Number.isFinite(dur) && dur > 0) {
+        dispatch(setDuration(dur))
+      }
+    }
 
-   const onTimeUpdate = () => {
-     dispatch(setCurrentTime(audio.currentTime))
-     if (Number.isFinite(audio.duration) && audio.duration > 0) {
-       dispatch(setProgress((audio.currentTime / audio.duration) * 100))
-     }
-   }
+    const onTimeUpdate = () => {
+      dispatch(setCurrentTime(audio.currentTime))
+      const dur = audio.duration
+      if (Number.isFinite(dur) && dur > 0) {
+        dispatch(setDuration(dur))
+        dispatch(setProgress((audio.currentTime / dur) * 100))
+      } else if (audio.buffered.length > 0) {
+        const bufEnd = audio.buffered.end(audio.buffered.length - 1)
+        if (Number.isFinite(bufEnd) && bufEnd > 0) {
+          dispatch(setDuration(bufEnd))
+          dispatch(setProgress((audio.currentTime / bufEnd) * 100))
+        }
+      }
+    }
 
    const onEnded = () => {
      dispatch(stopTrack())
@@ -114,8 +135,10 @@ export function MiniPlayer() {
   const handleSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const audio = audioRef.current
-      if (!audio || !audio.duration) return
-      const time = (Number(e.target.value) / 100) * audio.duration
+      if (!audio) return
+      const dur = audio.duration
+      if (!Number.isFinite(dur) || dur <= 0) return
+      const time = (Number(e.target.value) / 100) * dur
       audio.currentTime = time
       dispatch(setCurrentTime(time))
     },
@@ -127,8 +150,8 @@ export function MiniPlayer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <div className="fixed bottom-16 left-0 right-0 h-16 bg-background border-t border-border z-30 flex items-center px-4 gap-3">
-      <audio ref={audioRef} preload="auto" />
+    <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border z-30 flex items-center px-4 gap-3">
+      <audio ref={audioRef} preload="auto" className="hidden" />
 
       {currentTrack.image ? (
         <Image

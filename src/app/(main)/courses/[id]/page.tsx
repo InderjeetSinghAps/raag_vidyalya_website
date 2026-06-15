@@ -234,6 +234,7 @@ export default function CourseDetailPage() {
                 <div className="mt-5 lg:mt-6 space-y-3">
                   {[...course.videos]
                     .sort((a, b) => a.order - b.order)
+                    .filter((video) => video.order !== 0)
                     .map((video) => {
                       const isExpanded = expandedLesson === video.id
                       const thumb = getVideoThumbnail(video.videoUrl)
@@ -255,7 +256,6 @@ export default function CourseDetailPage() {
                               <p className="text-xs lg:text-sm font-medium text-white truncate">{video.title}</p>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-[10px] lg:text-xs text-[#6B7280]">{video.order}</span>
                               {isExpanded ? (
                                 <ChevronUp className="size-4 lg:size-5 text-white/40" />
                               ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -8,17 +8,29 @@ import {
   BookOpen,
   Play,
   Loader2,
+  Bookmark,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useGetCourseVideoBookmarksQuery } from '@/store/api';
+import { toast } from 'sonner';
+import {
+  useGetCourseVideoBookmarksQuery,
+  useRemoveCourseVideoBookmarkMutation,
+} from '@/store/api';
 import { getYouTubeVideoId } from '@/lib/video';
 
 export default function BookmarksPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const { data, isLoading } = useGetCourseVideoBookmarksQuery();
-  const bookmarks = data?.bookmarks || [];
+  const [bookmarks, setBookmarks] = useState(data?.bookmarks || []);
+  const [removeBookmark] = useRemoveCourseVideoBookmarkMutation();
+
+  useEffect(() => {
+    if (!isLoading && data?.bookmarks) {
+      setBookmarks(data.bookmarks);
+    }
+  }, [data, isLoading]);
 
   const filteredBookmarks = bookmarks.filter(
     (b) =>
@@ -48,17 +60,15 @@ export default function BookmarksPage() {
           <ArrowLeft className="size-4" />
           Back
         </Button> */}
-        <div className="px-5 mt-[-25px]">
-          <Button
-            variant="ghost"
-            size="lg"
-            className="gap-1.5"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="lg"
+          className="gap-1.5 mb-4"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="size-4" />
+          Back
+        </Button>
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             <div>
@@ -119,6 +129,19 @@ export default function BookmarksPage() {
                       />
                     ) : null}
                     <Play className="hidden size-12 text-cyan-400/30" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-2 z-10 text-white/70 hover:text-primary transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBookmark(bookmark._id);
+                        setBookmarks((prev) => prev.filter((b) => b._id !== bookmark._id));
+                        toast.success("Removed from bookmarks");
+                      }}
+                    >
+                      <Bookmark className="size-5 fill-primary text-primary" />
+                    </Button>
                   </div>
                   <div className="flex flex-1 flex-col space-y-2 p-4">
                     <h3 className="line-clamp-1 text-base font-semibold text-foreground">

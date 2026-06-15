@@ -19,7 +19,7 @@ interface ProductApiItem {
   isActive: boolean
   createdAt: string
   updatedAt: string
-  user: { _id: string; userName: string; profileImage?: string }
+  user: { _id: string; userName: string; profileImage?: string; phoneNumber?: string; countryCode?: string }
 }
 
 interface GurbaniApiResponse {
@@ -341,6 +341,8 @@ function mapProduct(p: ProductApiItem): StoreProduct {
     tags: p.tags?.length ? p.tags : undefined,
     sellerName: p.user?.userName,
     sellerAvatar: p.user?.profileImage ? resolveImageUrl(p.user.profileImage) : undefined,
+    sellerPhone: p.user?.phoneNumber,
+    sellerCountryCode: p.user?.countryCode,
   }
 }
 
@@ -772,6 +774,24 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
       query: () => '/course-video-bookmarks',
       providesTags: ['Bookmark'],
     }),
+    addCourseVideoBookmark: builder.mutation<
+      BookmarkItem,
+      { title: string; videoUrl: string; description?: string }
+    >({
+      query: (body) => ({
+        url: '/course-video-bookmarks',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Bookmark'],
+    }),
+    removeCourseVideoBookmark: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/course-video-bookmarks/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Bookmark'],
+    }),
 
   }),
 })
@@ -797,4 +817,6 @@ export const {
   useGetRaagsQuery,
   useGetMyEnrollmentsQuery,
   useGetCourseVideoBookmarksQuery,
+  useAddCourseVideoBookmarkMutation,
+  useRemoveCourseVideoBookmarkMutation,
 } = api

@@ -29,13 +29,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store/hooks';
 import { playTrack } from '@/store/playerSlice';
-import { getGoogleDriveAudioUrl } from '@/lib/video';
+import { getGoogleDriveAudioUrl, getYouTubeVideoId } from '@/lib/video';
 import {
   useGetCoursesQuery,
   useGetProductsQuery,
   useGetGurbaniCollectionsQuery,
+  useGetRaagsQuery,
 } from '@/store/api';
-import { raags, contests, testimonials } from '@/data';
+import type { RaagApiItem } from '@/types';
+import { contests, testimonials } from '@/data';
+
+const levelColors: Record<string, string> = {
+  Beginner: 'text-emerald-400 border-emerald-500/20',
+  Intermediate: 'text-amber-400 border-amber-500/20',
+  Advanced: 'text-rose-400 border-rose-500/20',
+};
 
 function StarRating({
   rating,
@@ -148,6 +156,8 @@ export default function HomePage() {
   const { data: gurbaniCollections } =
     useGetGurbaniCollectionsQuery();
   const firstBaani = gurbaniCollections?.[0]?.baanis?.[0];
+  const { data: raagsData } = useGetRaagsQuery();
+  const apiRaags = raagsData?.raags ?? [];
 
   const stagger = {
     visible: { transition: { staggerChildren: 0.15 } },
@@ -277,37 +287,67 @@ export default function HomePage() {
             subtitle="Start your journey with our top courses"
           />
           <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
-            {courses.slice(0, 4).map((course) => (
-              <Card
-                key={course.id}
-                className="w-64 shrink-0 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-                onClick={() => router.push(`/courses/${course.id}`)}
-              >
-                <div className="flex h-36 items-center justify-center rounded-t-xl bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                  <BookOpen className="size-8 text-muted-foreground" />
-                </div>
-                <CardContent className="space-y-2 pt-3">
-                  <h3 className="font-semibold text-foreground">
-                    {course.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {course.instructor}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px]"
-                    >
+            {courses.slice(0, 4).map((course) => {
+              const thumbSrc = course.thumbnail ??
+                (getYouTubeVideoId(course.videos?.[0]?.videoUrl)
+                  ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/maxresdefault.jpg`
+                  : null);
+
+              return (
+                <Card
+                  key={course.id}
+                  className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                  onClick={() => router.push(`/courses/${course.id}`)}
+                >
+                  <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-background">
+                    {thumbSrc ? (
+                      <img
+                        src={thumbSrc}
+                        alt={course.title}
+                        referrerPolicy="no-referrer"
+                        className="size-full object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (img.src.includes('maxresdefault')) {
+                            img.src = img.src.replace('maxresdefault', 'hqdefault');
+                          } else {
+                            img.style.display = 'none';
+                            img.nextElementSibling?.classList.remove('hidden');
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <Badge className="absolute left-2 top-2 border border-amber-500/30 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-amber-400 uppercase tracking-wider backdrop-blur-sm">
+                      {course.isFree ? 'Free' : 'Paid'}
+                    </Badge>
+                    <Badge className={`absolute right-2 top-2 border bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm ${levelColors[course.level] || ''}`}>
                       {course.level}
                     </Badge>
-                    <StarRating rating={course.rating} />
+                    <BookOpen className="hidden size-12 text-cyan-400/30" />
                   </div>
-                  <p className="text-sm font-medium text-primary">
-                    ₹{course.price}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="space-y-2 p-4">
+                    <h3 className="font-semibold text-foreground">
+                      {course.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {course.instructor}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px]"
+                      >
+                        {course.level}
+                      </Badge>
+                      <StarRating rating={course.rating} />
+                    </div>
+                    <p className="text-sm font-medium text-primary">
+                      {course.isFree ? 'Free' : `₹${course.price}`}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -319,20 +359,24 @@ export default function HomePage() {
             subtitle="Explore the foundation of Gurmat Sangeet"
           />
           <Carousel
-            opts={{ align: 'start', loop: true, watchDrag: true }}
+            opts={{ align: 'start', loop: false, watchDrag: true }}
             className="mt-6 w-full"
           >
             <CarouselContent className="-ml-4">
-              {raags.map((raag) => (
+              {apiRaags.slice(0, 8).map((raag: RaagApiItem) => (
                 <CarouselItem
-                  key={raag.id}
+                  key={raag._id}
                   className="basis-auto pl-4"
                 >
-                  <div className="w-56 rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
-                    <div className="flex h-28 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                      <Music className="size-7 text-muted-foreground" />
+                  <div className="flex h-full w-56 flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
+                    <div className="flex h-28 shrink-0 items-center justify-center rounded-lg bg-background">
+                      <img
+                        src="/logo2.svg"
+                        alt="logo"
+                        className="size-40 text-primary/30"
+                      />
                     </div>
-                    <div className="mt-3 space-y-1">
+                    <div className="mt-3 flex-1 space-y-1">
                       <h3 className="font-semibold text-foreground">
                         {raag.name}
                       </h3>
@@ -343,20 +387,23 @@ export default function HomePage() {
                         <Clock className="size-3" />
                         <span>{raag.time}</span>
                       </div>
+                      <p className="font-mono text-xs text-primary/80">
+                        {raag.aroh}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="mt-3 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                      className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
                       onClick={() =>
                         dispatch(
                           playTrack({
-                            id: raag.id,
+                            id: raag._id,
                             title: raag.name,
-                            artist: raag.artist,
-                            audioUrl: raag.audioUrl,
-                            image: raag.image,
-                            duration: raag.duration,
+                            artist: '',
+                            audioUrl: raag.audioUrl || '',
+                            image: '',
+                            duration: '',
                           }),
                         )
                       }
@@ -532,27 +579,37 @@ export default function HomePage() {
             {storeProducts.slice(0, 3).map((product) => (
               <div
                 key={product.id}
-                className="w-48 shrink-0 rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                className="w-48 shrink-0 rounded-xl bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
               >
-                <div className="flex h-28 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                  <ShoppingBag className="size-6 text-muted-foreground" />
+                <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
+                  {product.images.length > 0 ? (
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 12vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <ShoppingBag className="size-10 text-muted-foreground/80 transition-colors group-hover:text-cyan-400/50" />
+                  )}
                 </div>
-                <div className="mt-3 space-y-1">
-                  <h3 className="text-sm font-medium text-foreground">
+                <div className="p-4 space-y-2">
+                  <h3 className="text-sm font-medium text-foreground truncate">
                     {product.name}
                   </h3>
                   <p className="text-sm font-semibold text-primary">
                     ₹{product.price}
                   </p>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    className="mt-2 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                    onClick={() => router.push('/store')}
+                  >
+                    Shop Now
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="mt-3 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                  onClick={() => router.push('/store')}
-                >
-                  Shop Now
-                </Button>
               </div>
             ))}
           </div>

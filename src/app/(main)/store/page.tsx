@@ -3,20 +3,17 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { ShoppingBag, ShoppingCart, Search, MessageCircle, Loader2 } from "lucide-react"
+import { ShoppingBag, Search, MessageCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { openCart } from "@/store/cartSlice"
+
 import { useGetProductsQuery } from "@/store/api"
 import type { StoreProduct } from "@/types"
 
 export default function StorePage() {
   const router = useRouter()
-  const dispatch = useAppDispatch()
-  const cartCount = useAppSelector((s) => s.cart.items.length)
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [page, setPage] = useState(1)
@@ -41,9 +38,15 @@ export default function StorePage() {
   const products = data?.products ?? []
   const totalPages = data?.totalPages ?? 1
 
-  const handleSendMessage = (e: React.MouseEvent, productId: string) => {
+  const handleSendMessage = (e: React.MouseEvent, product: StoreProduct) => {
     e.stopPropagation()
-    toast.success("Enquiry sent! We'll get back to you soon.")
+    if (!product.sellerPhone) {
+      toast.error("Seller contact not available")
+      return
+    }
+    const clean = product.sellerPhone.replace(/\D/g, "")
+    const message = `Hello! I'm interested in the "${product.name}".\n\u{1F4CC} Description: ${product.description}\n\u{1F4B0} Price: \u20B9${product.price}${product.originalPrice ? ` (Original: \u20B9${product.originalPrice})` : ''}\n\u{1F3AF} Category: ${product.category}\nCould you please share more details or help me with the purchase?`
+    window.open(`https://api.whatsapp.com/send/?phone=${clean}&text=${encodeURIComponent(message)}`, "_blank")
   }
 
   return (
@@ -134,7 +137,7 @@ export default function StorePage() {
                       variant="outline"
                       size="sm"
                       className="mt-auto w-full border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
-                      onClick={(e) => handleSendMessage(e, product.id)}
+                      onClick={(e) => handleSendMessage(e, product)}
                     >
                       <MessageCircle className="size-3" />
                       Send Message
@@ -187,17 +190,6 @@ export default function StorePage() {
         )}
       </div>
 
-      <button
-        onClick={() => dispatch(openCart())}
-        className="fixed bottom-24 right-4 z-40 flex size-12 items-center justify-center rounded-full bg-cyan-500 text-foreground shadow-lg shadow-cyan-500/25 transition-transform hover:scale-110 active:scale-95"
-      >
-        <ShoppingCart className="size-5" />
-        {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-            {cartCount}
-          </span>
-        )}
-      </button>
     </div>
   )
 }

@@ -106,6 +106,8 @@ export interface StoreProduct {
   tags?: string[]
   sellerName?: string
   sellerAvatar?: string
+  sellerPhone?: string
+  sellerCountryCode?: string
 }
 
 export interface CartItem {

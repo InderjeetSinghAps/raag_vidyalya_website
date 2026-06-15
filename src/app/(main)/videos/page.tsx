@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Search, Clock, User as UserIcon, Loader2 } from "lucide-react"
+import { Play, Search, Clock, User as UserIcon, Loader2, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useGetVideosQuery } from "@/store/api"
+import { toast } from "sonner"
+import {
+  useGetVideosQuery,
+  useGetCourseVideoBookmarksQuery,
+  useAddCourseVideoBookmarkMutation,
+  useRemoveCourseVideoBookmarkMutation,
+} from "@/store/api"
 
 export default function VideosPage() {
   const router = useRouter()
@@ -26,6 +32,11 @@ export default function VideosPage() {
   })
   const videos = data?.videos ?? []
   const totalPages = data?.totalPages ?? 1
+
+  const { data: bookmarksData } = useGetCourseVideoBookmarksQuery()
+  const bookmarkedUrls = new Set(bookmarksData?.bookmarks?.map((b) => b.videoUrl) ?? [])
+  const [addBookmark] = useAddCourseVideoBookmarkMutation()
+  const [removeBookmark] = useRemoveCourseVideoBookmarkMutation()
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -102,6 +113,39 @@ export default function VideosPage() {
                         {video.duration}
                       </Badge>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-2 z-10 text-white/70 hover:text-primary transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const isBookmarked = bookmarkedUrls.has(video.videoUrl)
+                        if (isBookmarked) {
+                          const bookmark = bookmarksData?.bookmarks?.find((b) => b.videoUrl === video.videoUrl)
+                          if (bookmark) {
+                            removeBookmark(bookmark._id)
+                            bookmarkedUrls.delete(video.videoUrl)
+                            toast.success("Removed from bookmarks")
+                          }
+                        } else {
+                          addBookmark({
+                            title: video.title,
+                            videoUrl: video.videoUrl,
+                            description: video.description,
+                          })
+                          bookmarkedUrls.add(video.videoUrl)
+                          toast.success("Added to bookmarks")
+                        }
+                      }}
+                    >
+                      <Bookmark
+                        className={`size-5 transition-colors ${
+                          bookmarkedUrls.has(video.videoUrl)
+                            ? 'fill-primary text-primary'
+                            : ''
+                        }`}
+                      />
+                    </Button>
                   </div>
                   <div className="space-y-1.5 p-3">
                     <p className="line-clamp-1 text-sm font-medium text-foreground">{video.title}</p>
