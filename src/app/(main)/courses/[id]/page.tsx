@@ -1,50 +1,78 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
-  ArrowLeft, BookOpen, User, Star, Play, GraduationCap, Check,
-  Loader2, ShieldCheck, ChevronDown, ChevronUp,
-  Award, Hash, BarChart3, Sparkles,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { enrollCourse } from "@/store/coursesSlice"
-import { useGetCourseByIdQuery, useGetCoursesQuery } from "@/store/api"
-import { getYouTubeVideoId } from "@/lib/video"
+  ArrowLeft,
+  BookOpen,
+  User,
+  Star,
+  Play,
+  GraduationCap,
+  Check,
+  Loader2,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Award,
+  Hash,
+  BarChart3,
+  Sparkles,
+  ImageIcon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { enrollCourse } from '@/store/coursesSlice';
+import {
+  useGetCourseByIdQuery,
+  useGetCoursesQuery,
+} from '@/store/api';
+import { getYouTubeVideoId } from '@/lib/video';
 
 function getVideoThumbnail(videoUrl: string): string | null {
-  const id = getYouTubeVideoId(videoUrl)
-  if (!id) return null
-  return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
+  const id = getYouTubeVideoId(videoUrl);
+  if (!id) return null;
+  return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
 }
 
 export default function CourseDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const dispatch = useAppDispatch()
-  const enrolledCourses = useAppSelector((s) => s.courses.enrolledCourses)
-  const [expandedLesson, setExpandedLesson] = useState<string | null>(null)
+  const params = useParams();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const enrolledCourses = useAppSelector(
+    (s) => s.courses.enrolledCourses,
+  );
+  const [expandedLesson, setExpandedLesson] = useState<string | null>(
+    null,
+  );
+  const [heroQuality, setHeroQuality] = useState<
+    'maxresdefault' | 'hqdefault'
+  >('maxresdefault');
 
-  const { data: course, isLoading } = useGetCourseByIdQuery(params.id as string)
+  const { data: course, isLoading } = useGetCourseByIdQuery(
+    params.id as string,
+  );
 
   const { data: relatedData } = useGetCoursesQuery(
     { limit: 20 },
     { skip: !course },
-  )
+  );
   const relatedCourses = relatedData
     ? relatedData.courses
-        .filter((c) => c.id !== course?.id && c.category === course?.category)
+        .filter(
+          (c) =>
+            c.id !== course?.id && c.category === course?.category,
+        )
         .slice(0, 3)
-    : []
+    : [];
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050505]">
         <Loader2 className="size-8 animate-spin text-white/60" />
       </div>
-    )
+    );
   }
 
   if (!course) {
@@ -56,36 +84,63 @@ export default function CourseDetailPage() {
           <Button
             variant="outline"
             className="border-white/10 text-white/70 hover:bg-white/5"
-            onClick={() => router.push("/courses")}
+            onClick={() => router.back()}
           >
-            Back to Courses
+            Back
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
-  const isEnrolled = enrolledCourses.includes(course.id) || course.isEnrolled
-  const firstVideo = course.videos.length > 0 ? course.videos[0] : null
-  const hasRating = course.ratingCount > 0
+  const isEnrolled =
+    enrolledCourses.includes(course.id) || course.isEnrolled;
+  const firstVideo =
+    course.videos.length > 0 ? course.videos[0] : null;
+  const hasRating = course.ratingCount > 0;
+  const heroImageSrc =
+    course.thumbnail ??
+    (firstVideo?.videoUrl && getYouTubeVideoId(firstVideo.videoUrl)
+      ? `https://img.youtube.com/vi/${getYouTubeVideoId(firstVideo.videoUrl)}/${heroQuality}.jpg`
+      : null);
 
   const handleEnroll = () => {
-    dispatch(enrollCourse(course.id))
-  }
+    dispatch(enrollCourse(course.id));
+  };
 
   return (
     <div className="min-h-screen bg-[#050505]">
-
       {/* ── Hero ── */}
       <div className="relative h-[500px] w-full overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${course.thumbnail})` }}
-        />
+        {heroImageSrc ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-top size-full"
+              style={{ backgroundImage: `url(${heroImageSrc})` }}
+            />
+            <img
+              src={heroImageSrc}
+              alt=""
+              className="hidden size-full"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.src.includes('maxresdefault')) {
+                  setHeroQuality('hqdefault');
+                } else {
+                  img.style.display = 'none';
+                }
+              }}
+            />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#0D1022]">
+            <ImageIcon className="size-20 text-white/20" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 to-black/80" />
 
         <button
-          onClick={() => router.push("/courses")}
+          onClick={() => router.back()}
           className="absolute left-8 top-8 flex size-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 transition-all duration-200 hover:bg-black/50 hover:scale-105"
         >
           <ArrowLeft className="size-6 text-white" />
@@ -98,12 +153,9 @@ export default function CourseDetailPage() {
 
       {/* ── MAIN LAYOUT ── */}
       <div className="mx-auto max-w-[1400px] px-4 lg:px-12 pb-32">
-
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-10 items-start">
-
           {/* ══════ MAIN CONTENT ══════ */}
           <div>
-
             {/* Title */}
             <h1 className="text-xl lg:text-2xl font-bold text-white leading-tight">
               {course.title}
@@ -125,17 +177,24 @@ export default function CourseDetailPage() {
               </span>
               <span className="inline-flex items-center gap-2 text-sm text-[#9CA3AF]">
                 <Award className="size-4" />
-                {course.isFree ? "Free" : `${course.price} Coins`}
+                {course.isFree ? 'Free' : `${course.price} ${course.price === 1 ? 'Coin' : 'Coins'}`}
               </span>
               <span className="inline-flex items-center gap-2 text-sm">
                 {hasRating ? (
                   <>
-                    <Star className="size-4 text-yellow-400" fill="currentColor" />
-                    <span className="text-yellow-400 font-medium">{course.rating.toFixed(1)}</span>
-                    <span className="text-[#9CA3AF]">({course.ratingCount})</span>
+                    <Star
+                      className="size-4 text-yellow-400"
+                      fill="currentColor"
+                    />
+                    <span className="text-yellow-400 font-medium">
+                      {course.rating.toFixed(1)}
+                    </span>
+                    <span className="text-[#9CA3AF]">
+                      ({course.ratingCount})
+                    </span>
                   </>
                 ) : (
-<p></p>
+                  <p></p>
                 )}
               </span>
             </div>
@@ -154,22 +213,26 @@ export default function CourseDetailPage() {
                   <User className="size-6 lg:size-8 text-white/40" />
                 </div>
               )}
-<div className="flex-1 min-w-0">
-        <div className="flex items-center flex-wrap gap-2">
-          <p className="text-base lg:text-lg font-semibold text-white ">
-            {course.instructor}
-          </p>
-          {course.instructorProfession && (
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400 whitespace-nowrap">
-              {course.instructorProfession}
-            </span>
-          )}
-        </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center flex-wrap gap-2">
+                  <p className="text-base lg:text-lg font-semibold text-white ">
+                    {course.instructor}
+                  </p>
+                  {course.instructorProfession && (
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400 whitespace-nowrap">
+                      {course.instructorProfession}
+                    </span>
+                  )}
+                </div>
                 {course.instructorEmail && (
-                  <p className="mt-0.5 text-[10px] lg:text-[11px] text-[#6B7280] truncate">{course.instructorEmail}</p>
+                  <p className="mt-0.5 text-[10px] lg:text-[11px] text-[#6B7280] truncate">
+                    {course.instructorEmail}
+                  </p>
                 )}
                 {course.instructorPhone && (
-                  <p className="text-[11px] lg:text-xs text-[#6B7280]">{course.instructorPhone}</p>
+                  <p className="text-[11px] lg:text-xs text-[#6B7280]">
+                    {course.instructorPhone}
+                  </p>
                 )}
               </div>
               <Button
@@ -183,25 +246,49 @@ export default function CourseDetailPage() {
             {/* ── QUICK FACTS (4-column grid) ── */}
             <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {[
-                { label: "Level", value: course.level, icon: BarChart3 },
-                { label: "Videos", value: `${course.videoCount}`, icon: Play },
-                { label: "Category", value: course.category, icon: BookOpen },
-                { label: "Price", value: course.isFree ? "Free" : `${course.price} Coins`, icon: ShieldCheck },
+                {
+                  label: 'Level',
+                  value: course.level,
+                  icon: BarChart3,
+                },
+                {
+                  label: 'Videos',
+                  value: `${course.videoCount}`,
+                  icon: Play,
+                },
+                {
+                  label: 'Category',
+                  value: course.category,
+                  icon: BookOpen,
+                },
+                {
+                  label: 'Price',
+                  value: course.isFree
+                    ? 'Free'
+                    : `${course.price} ${course.price === 1 ? 'Coin' : 'Coins'}`,
+                  icon: ShieldCheck,
+                },
               ].map((item) => (
                 <div
                   key={item.label}
                   className="flex flex-col items-center justify-center gap-1.5 lg:gap-2 rounded-2xl bg-[#0D1022] py-5 lg:py-6 px-3 text-center"
                 >
                   <item.icon className="size-4 lg:size-5 text-[#2CE6C8]" />
-                  <p className="text-xs lg:text-sm font-semibold text-white truncate max-w-full">{item.value}</p>
-                  <p className="text-[10px] lg:text-xs text-[#8A8A8A]">{item.label}</p>
+                  <p className="text-xs lg:text-sm font-semibold text-white truncate max-w-full">
+                    {item.value}
+                  </p>
+                  <p className="text-[10px] lg:text-xs text-[#8A8A8A]">
+                    {item.label}
+                  </p>
                 </div>
               ))}
             </div>
 
             {/* ── ABOUT ── */}
             <section className="mt-10 lg:mt-12">
-              <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">About this course</h2>
+              <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">
+                About this course
+              </h2>
               <p className="mt-4 max-w-[850px] text-sm lg:text-base leading-relaxed text-[#B0B0B0]">
                 {course.description}
               </p>
@@ -210,14 +297,21 @@ export default function CourseDetailPage() {
             {/* ── LEARNING OUTCOMES ── */}
             {course.benefits.length > 0 && (
               <section className="mt-10 lg:mt-14">
-                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">Learning Outcomes</h2>
+                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">
+                  Learning Outcomes
+                </h2>
                 <div className="mt-5 lg:mt-6 space-y-4 lg:space-y-5">
                   {course.benefits.map((b, i) => (
-                    <div key={i} className="flex items-start gap-3 lg:gap-4">
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 lg:gap-4"
+                    >
                       <div className="flex size-6 lg:size-7 shrink-0 items-center justify-center rounded-full bg-[#2CE6C8]/20">
                         <Check className="size-3.5 lg:size-4 text-[#2CE6C8]" />
                       </div>
-                      <span className="text-sm lg:text-sm leading-relaxed text-[#C8C8C8]">{b}</span>
+                      <span className="text-sm lg:text-sm leading-relaxed text-[#C8C8C8]">
+                        {b}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -227,17 +321,21 @@ export default function CourseDetailPage() {
             {/* ── CURRICULUM ACCORDION ── */}
             {course.videos.length > 0 && (
               <section className="mt-10 lg:mt-14">
-                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">Course Curriculum</h2>
+                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">
+                  Course Curriculum
+                </h2>
                 <p className="mt-1 text-sm lg:text-base text-[#6B7280]">
-                  {course.videoCount} video{course.videoCount !== 1 ? "s" : ""} &bull; Learn at your own pace
+                  {course.videoCount} video
+                  {course.videoCount !== 1 ? 's' : ''} &bull; Learn at
+                  your own pace
                 </p>
                 <div className="mt-5 lg:mt-6 space-y-3">
                   {[...course.videos]
                     .sort((a, b) => a.order - b.order)
                     .filter((video) => video.order !== 0)
                     .map((video) => {
-                      const isExpanded = expandedLesson === video.id
-                      const thumb = getVideoThumbnail(video.videoUrl)
+                      const isExpanded = expandedLesson === video.id;
+                      const thumb = getVideoThumbnail(video.videoUrl);
 
                       return (
                         <div
@@ -245,15 +343,23 @@ export default function CourseDetailPage() {
                           className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D1022] transition-all duration-200"
                         >
                           <button
-                            onClick={() => setExpandedLesson(isExpanded ? null : video.id)}
+                            onClick={() =>
+                              setExpandedLesson(
+                                isExpanded ? null : video.id,
+                              )
+                            }
                             className="flex h-[72px] w-full items-center gap-3 lg:gap-4 px-4 lg:px-6 text-left transition-colors hover:bg-white/[0.03]"
                           >
                             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#2CE6C8]/10">
                               <Play className="size-3.5 text-[#2CE6C8]" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[10px] lg:text-xs text-[#2CE6C8] font-medium">Lesson {video.order}</p>
-                              <p className="text-xs lg:text-sm font-medium text-white truncate">{video.title}</p>
+                              <p className="text-[10px] lg:text-xs text-[#2CE6C8] font-medium">
+                                Lesson {video.order}
+                              </p>
+                              <p className="text-xs lg:text-sm font-medium text-white truncate">
+                                {video.title}
+                              </p>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                               {isExpanded ? (
@@ -275,20 +381,32 @@ export default function CourseDetailPage() {
                                       referrerPolicy="no-referrer"
                                       className="size-full object-cover"
                                       onError={(e) => {
-                                        const img = e.currentTarget
-                                        if (img.src.includes('maxresdefault')) {
-                                          img.src = img.src.replace('maxresdefault', 'hqdefault')
+                                        const img = e.currentTarget;
+                                        if (
+                                          img.src.includes(
+                                            'maxresdefault',
+                                          )
+                                        ) {
+                                          img.src = img.src.replace(
+                                            'maxresdefault',
+                                            'hqdefault',
+                                          );
                                         }
                                       }}
                                     />
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                      <Play className="size-8 text-white" fill="white" />
+                                      <Play
+                                        className="size-8 text-white"
+                                        fill="white"
+                                      />
                                     </div>
                                   </div>
                                 )}
                                 <div className="flex flex-col justify-between flex-1">
                                   <div>
-                                    <p className="text-sm lg:text-base font-medium text-white">{video.title}</p>
+                                    <p className="text-sm lg:text-base font-medium text-white">
+                                      {video.title}
+                                    </p>
                                     {video.description && (
                                       <p className="mt-2 text-sm leading-relaxed text-[#A0A0A0] max-w-[500px]">
                                         {video.description}
@@ -296,7 +414,10 @@ export default function CourseDetailPage() {
                                     )}
                                   </div>
                                   <Button className="mt-4 lg:mt-0 w-fit rounded-full bg-[#2CE6C8] text-sm font-semibold text-black hover:bg-[#2CE6C8]/90">
-                                    <Play className="mr-2 size-4" fill="currentColor" />
+                                    <Play
+                                      className="mr-2 size-4"
+                                      fill="currentColor"
+                                    />
                                     Watch Lesson
                                   </Button>
                                 </div>
@@ -304,7 +425,7 @@ export default function CourseDetailPage() {
                             </div>
                           )}
                         </div>
-                      )
+                      );
                     })}
                 </div>
               </section>
@@ -313,11 +434,16 @@ export default function CourseDetailPage() {
             {/* ── PREREQUISITES: "Before You Start" ── */}
             {course.prerequisites.length > 0 && (
               <section className="mt-10 lg:mt-14">
-                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">Before You Start</h2>
+                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">
+                  Before You Start
+                </h2>
                 <div className="mt-5 rounded-3xl border border-white/[0.08] bg-[#0D1022] p-5 lg:p-6">
                   <ul className="space-y-3 lg:space-y-4">
                     {course.prerequisites.map((p, i) => (
-                      <li key={i} className="flex items-start gap-3 text-xs lg:text-sm text-[#B0B0B0]">
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 text-xs lg:text-sm text-[#B0B0B0]"
+                      >
                         <span className="mt-2 size-2 shrink-0 rounded-full bg-[#2CE6C8]" />
                         <span>{p}</span>
                       </li>
@@ -330,7 +456,9 @@ export default function CourseDetailPage() {
             {/* ── CLICKABLE TAG PILLS ── */}
             {course.tags.length > 0 && (
               <section className="mt-10 lg:mt-14">
-                <h2 className="text-xs lg:text-sm font-semibold uppercase tracking-widest text-[#6B7280] mb-4">Topics</h2>
+                <h2 className="text-xs lg:text-sm font-semibold uppercase tracking-widest text-[#6B7280] mb-4">
+                  Tags
+                </h2>
                 <div className="flex flex-wrap gap-3">
                   {course.tags.map((tag) => (
                     <Link
@@ -349,12 +477,16 @@ export default function CourseDetailPage() {
             {/* ── RELATED COURSES ── */}
             {relatedCourses.length > 0 && (
               <section className="mt-12 lg:mt-16">
-                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">Related Courses</h2>
+                <h2 className="text-base lg:text-lg tracking-wide font-medium text-white">
+                  Related Courses
+                </h2>
                 <div className="mt-5 lg:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
                   {relatedCourses.map((rel) => (
                     <button
                       key={rel.id}
-                      onClick={() => router.push(`/courses/${rel.id}`)}
+                      onClick={() =>
+                        router.push(`/courses/${rel.id}`)
+                      }
                       className="group overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D1022] text-left transition-all duration-200 hover:border-[#2CE6C8]/30 hover:-translate-y-1"
                     >
                       <div className="relative h-[130px] lg:h-[140px] overflow-hidden">
@@ -377,12 +509,20 @@ export default function CourseDetailPage() {
                         </div>
                       </div>
                       <div className="p-4">
-                        <p className="font-medium text-white text-xs lg:text-sm line-clamp-2">{rel.title}</p>
+                        <p className="font-medium text-white text-xs lg:text-sm line-clamp-2">
+                          {rel.title}
+                        </p>
                         <div className="mt-2 flex items-center gap-2 text-xs text-[#6B7280]">
                           <Play className="size-3" />
                           <span>{rel.videoCount} lessons</span>
-                          <span className="text-white/10">&bull;</span>
-                          <span>{rel.isFree ? "Free" : `${rel.price} Coins`}</span>
+                          <span className="text-white/10">
+                            &bull;
+                          </span>
+                          <span>
+                            {rel.isFree
+                              ? 'Free'
+                              : `${rel.price} ${rel.price === 1 ? 'Coin' : 'Coins'}`}
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -390,21 +530,23 @@ export default function CourseDetailPage() {
                 </div>
               </section>
             )}
-
           </div>
 
           {/* ══════ SIDEBAR ══════ */}
           <div className="lg:sticky lg:top-[88px]">
             <div className="rounded-[30px] bg-[#0D1022] p-6 lg:p-8 shadow-[0_20px_60px_rgba(0,0,0,.45)]">
-
               <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-[#2CE6C8]">
-                  {course.isFree ? "FREE" : `${course.price}`}
+                  {course.isFree ? 'FREE' : `${course.price}`}
                 </p>
                 {!course.isFree && (
-                  <p className="text-sm lg:text-base text-[#9CA3AF]">Coins</p>
+                  <p className="text-sm lg:text-base text-[#9CA3AF]">
+                    {course.price === 1 ? 'Coin' : 'Coins'}
+                  </p>
                 )}
-                <p className="text-sm lg:text-base text-[#9CA3AF]">Full Access</p>
+                <p className="text-sm lg:text-base text-[#9CA3AF]">
+                  Full Access
+                </p>
               </div>
 
               <Button
@@ -412,26 +554,42 @@ export default function CourseDetailPage() {
                 onClick={handleEnroll}
               >
                 <ShieldCheck className="mr-2 size-5 lg:size-6" />
-                {isEnrolled ? "Continue Learning" : "Enroll Now"}
+                {isEnrolled ? 'Continue Learning' : 'Enroll Now'}
               </Button>
 
               <div className="mt-6 space-y-2">
                 <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3">
-                  <span className="text-sm text-[#9CA3AF]">Lessons</span>
-                  <span className="text-sm font-medium text-white">{course.videoCount}</span>
+                  <span className="text-sm text-[#9CA3AF]">
+                    Lessons
+                  </span>
+                  <span className="text-sm font-medium text-white">
+                    {course.videoCount}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3">
-                  <span className="text-sm text-[#9CA3AF]">Level</span>
-                  <span className="text-sm font-medium text-white">{course.level}</span>
+                  <span className="text-sm text-[#9CA3AF]">
+                    Level
+                  </span>
+                  <span className="text-sm font-medium text-white">
+                    {course.level}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3">
-                  <span className="text-sm text-[#9CA3AF]">Category</span>
-                  <span className="text-sm font-medium text-white">{course.category}</span>
+                  <span className="text-sm text-[#9CA3AF]">
+                    Category
+                  </span>
+                  <span className="text-sm font-medium text-white">
+                    {course.category}
+                  </span>
                 </div>
                 {course.requiresSubscriptionOrPurchase && (
                   <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-4 py-3">
-                    <span className="text-sm text-[#9CA3AF]">Access</span>
-                    <span className="text-sm font-medium text-[#2CE6C8]">Premium</span>
+                    <span className="text-sm text-[#9CA3AF]">
+                      Access
+                    </span>
+                    <span className="text-sm font-medium text-[#2CE6C8]">
+                      Premium
+                    </span>
                   </div>
                 )}
               </div>
@@ -439,7 +597,8 @@ export default function CourseDetailPage() {
               {!isEnrolled && (
                 <div className="mt-6 rounded-xl bg-[#2CE6C8]/5 px-4 py-3">
                   <p className="text-xs leading-relaxed text-[#9CA3AF]">
-                    By enrolling you agree to our terms of service and privacy policy.
+                    By enrolling you agree to our terms of service and
+                    privacy policy.
                   </p>
                 </div>
               )}
@@ -454,27 +613,33 @@ export default function CourseDetailPage() {
           <div className="mx-auto flex max-w-[1400px] items-center gap-4 lg:gap-6 px-4 lg:px-12 py-3 lg:py-4">
             <div className="flex flex-1 items-center gap-3 lg:gap-4 min-w-0">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#2CE6C8]/10">
-                <Play className="size-5 text-[#2CE6C8]" fill="currentColor" />
+                <Play
+                  className="size-5 text-[#2CE6C8]"
+                  fill="currentColor"
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-white truncate">
-                  {firstVideo ? firstVideo.title : "Continue Learning"}
+                  {firstVideo
+                    ? firstVideo.title
+                    : 'Continue Learning'}
                 </p>
                 <div className="mt-1 flex items-center gap-3">
                   <div className="h-1.5 flex-1 max-w-[300px] overflow-hidden rounded-full bg-white/10">
                     <div className="h-full w-0 rounded-full bg-[#2CE6C8] transition-all duration-500" />
                   </div>
-                  <span className="text-xs text-[#6B7280] shrink-0">0% Complete</span>
+                  <span className="text-xs text-[#6B7280] shrink-0">
+                    0% Complete
+                  </span>
                 </div>
               </div>
             </div>
             <Button className="shrink-0 rounded-full bg-[#2CE6C8] px-6 lg:px-8 text-sm font-semibold text-black hover:bg-[#2CE6C8]/90">
-              {firstVideo ? "Continue" : "Start Course"}
+              {firstVideo ? 'Continue' : 'Start Course'}
             </Button>
           </div>
         </div>
       )}
-
     </div>
-  )
+  );
 }
