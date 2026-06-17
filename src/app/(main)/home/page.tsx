@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   BookOpen,
   Music,
+  ChevronDown,
   Star,
   StarHalf,
   Clock,
@@ -16,6 +18,7 @@ import {
   GraduationCap,
   TrendingUp,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +32,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store/hooks';
 import { playTrack } from '@/store/playerSlice';
-import { getGoogleDriveAudioUrl, getYouTubeVideoId } from '@/lib/video';
+import {
+  getGoogleDriveAudioUrl,
+  getYouTubeVideoId,
+} from '@/lib/video';
 import {
   useGetCoursesQuery,
   useGetProductsQuery,
@@ -37,7 +43,7 @@ import {
   useGetRaagsQuery,
 } from '@/store/api';
 import type { RaagApiItem } from '@/types';
-import { contests, testimonials } from '@/data';
+import { testimonials } from '@/data';
 
 const levelColors: Record<string, string> = {
   Beginner: 'text-emerald-400 border-emerald-500/20',
@@ -155,10 +161,22 @@ export default function HomePage() {
   const storeProducts = productsData?.products ?? [];
   const { data: gurbaniCollections } =
     useGetGurbaniCollectionsQuery();
-  const firstBaani = gurbaniCollections?.[0]?.baanis?.[0];
+  const [openCollectionIds, setOpenCollectionIds] = useState<
+    Set<string>
+  >(new Set());
+  const toggleCollection = (id: string) => {
+    setOpenCollectionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const { data: raagsData } = useGetRaagsQuery();
   const apiRaags = raagsData?.raags ?? [];
 
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'light';
   const stagger = {
     visible: { transition: { staggerChildren: 0.15 } },
   };
@@ -181,17 +199,18 @@ export default function HomePage() {
       <section className="relative min-h-[calc(100vh-72px)] overflow-hidden px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0">
           <Image
-            src="/hero.png"
+            src={isLightTheme ? '/hero-light.png' : '/hero.png'}
             fill
-            className="object-cover outline outline-1 -outline-offset-1 outline-white/10"
+            className={`object-cover outline outline-1 -outline-offset-1 ${isLightTheme ? 'outline-black/5' : 'outline-white/10'}`}
             alt=""
             priority
           />
           <div
             className="absolute inset-0"
             style={{
-              background:
-                'linear-gradient(90deg, #06111d 0%, #06111d 30%, transparent 60%, transparent 100%)',
+              background: isLightTheme
+                ? 'linear-gradient(90deg, #ffffff 0%, #ffffff 30%, transparent 60%, transparent 100%)'
+                : 'linear-gradient(90deg, #06111d 0%, #06111d 30%, transparent 60%, transparent 100%)',
             }}
           />
         </div>
@@ -204,7 +223,7 @@ export default function HomePage() {
           <div className="max-w-[800px]">
             <motion.h1
               variants={fadeUp}
-              className="text-balance text-4xl font-bold leading-[1.1] text-white sm:text-6xl lg:text-7xl"
+              className={`text-balance text-4xl font-bold leading-[1.1] sm:text-6xl lg:text-7xl ${isLightTheme ? 'text-gray-900' : 'text-white'}`}
             >
               Learn Gurmat Sangeet
             </motion.h1>
@@ -217,7 +236,7 @@ export default function HomePage() {
             <motion.p
               variants={fadeUp}
               className="mt-8 max-w-[500px] text-pretty text-lg leading-relaxed"
-              style={{ color: '#CBD5E1' }}
+              style={{ color: isLightTheme ? '#4B5563' : '#CBD5E1' }}
             >
               Discover the divine art of Sikh sacred music. Master
               ancient raags, authentic hymns, and timeless melodies
@@ -238,7 +257,11 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="outline"
-                className="h-11 border border-white/40 bg-white/[0.06] px-6 text-sm font-medium text-white/90 backdrop-blur-sm transition-all duration-200 hover:border-white/60 hover:bg-white/[0.1] hover:text-white active:scale-[0.96]"
+                className={`h-11 border px-6 text-sm font-medium backdrop-blur-sm transition-all duration-200 active:scale-[0.96] ${
+                  isLightTheme
+                    ? 'border-gray-300 bg-gray-100/80 text-gray-700 hover:border-gray-400 hover:bg-gray-200/80 hover:text-gray-900'
+                    : 'border-white/40 bg-white/[0.06] text-white/90 hover:border-white/60 hover:bg-white/[0.1] hover:text-white'
+                }`}
                 onClick={() => router.push('/courses')}
               >
                 View Courses
@@ -253,7 +276,11 @@ export default function HomePage() {
           {featureCards.map((feature) => (
             <div
               key={feature.label}
-              className="flex h-[140px] items-center gap-4 rounded-2xl bg-card p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(212,164,74,0.2),0_4px_12px_rgba(0,0,0,0.2)] active:scale-[0.98]"
+              className={`flex h-[140px] items-center gap-4 rounded-2xl bg-card p-6 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${
+                isLightTheme
+                  ? 'shadow-[0_0_0_1px_rgba(0,0,0,0.06)] hover:shadow-[0_0_0_1px_rgba(212,164,74,0.3),0_4px_12px_rgba(0,0,0,0.08)]'
+                  : 'shadow-[0_0_0_1px_rgba(255,255,255,0.06)] hover:shadow-[0_0_0_1px_rgba(212,164,74,0.2),0_4px_12px_rgba(0,0,0,0.2)]'
+              }`}
             >
               <div
                 className="flex size-12 shrink-0 items-center justify-center rounded-full"
@@ -288,7 +315,8 @@ export default function HomePage() {
           />
           <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
             {courses.slice(0, 4).map((course) => {
-              const thumbSrc = course.thumbnail ??
+              const thumbSrc =
+                course.thumbnail ??
                 (getYouTubeVideoId(course.videos?.[0]?.videoUrl)
                   ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/maxresdefault.jpg`
                   : null);
@@ -309,10 +337,15 @@ export default function HomePage() {
                         onError={(e) => {
                           const img = e.currentTarget;
                           if (img.src.includes('maxresdefault')) {
-                            img.src = img.src.replace('maxresdefault', 'hqdefault');
+                            img.src = img.src.replace(
+                              'maxresdefault',
+                              'hqdefault',
+                            );
                           } else {
                             img.style.display = 'none';
-                            img.nextElementSibling?.classList.remove('hidden');
+                            img.nextElementSibling?.classList.remove(
+                              'hidden',
+                            );
                           }
                         }}
                       />
@@ -320,7 +353,9 @@ export default function HomePage() {
                     <Badge className="absolute left-2 top-2 border border-amber-500/30 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-amber-400 uppercase tracking-wider backdrop-blur-sm">
                       {course.isFree ? 'Free' : 'Paid'}
                     </Badge>
-                    <Badge className={`absolute right-2 top-2 border bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm ${levelColors[course.level] || ''}`}>
+                    <Badge
+                      className={`absolute right-2 top-2 border bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm ${levelColors[course.level] || ''}`}
+                    >
                       {course.level}
                     </Badge>
                     <BookOpen className="hidden size-12 text-cyan-400/30" />
@@ -369,7 +404,7 @@ export default function HomePage() {
                   className="basis-auto pl-4"
                 >
                   <div className="flex h-full w-56 flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
-                    <div className="flex h-28 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <div className="flex h-28 shrink-0 items-center justify-center rounded-lg ">
                       <img
                         src="/logo2.svg"
                         alt="logo"
@@ -425,107 +460,109 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <SectionHeader
             title="Daily Gurbani"
-            subtitle="Sacred hymn for today"
+            subtitle="Sacred hymns for today"
           />
-          <div className="mt-6">
-            {firstBaani && (
-              <div className="flex items-center gap-4 rounded-xl bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted outline outline-1 -outline-offset-1 outline-white/10">
-                  <Music className="size-5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-foreground">
-                    {firstBaani.title}
-                  </h3>
-                  {firstBaani.gurmukhi && (
-                    <p className="truncate text-xs text-muted-foreground">
-                      {firstBaani.gurmukhi}
-                    </p>
-                  )}
-                  {firstBaani.transliteration && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
-                      {firstBaani.transliteration}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                  onClick={() =>
-                    dispatch(
-                      playTrack({
-                        id: firstBaani._id,
-                        title: firstBaani.title,
-                        artist: '',
-                        audioUrl:
-                          getGoogleDriveAudioUrl(
-                            firstBaani.audioUrl,
-                          ) || firstBaani.audioUrl,
-                        image: '',
-                        duration: '',
-                      }),
-                    )
-                  }
+          <div className="mt-6 space-y-4">
+            {(gurbaniCollections ?? []).map((collection) => (
+              <div
+                key={collection._id}
+                className="overflow-hidden rounded-xl border border-border bg-card"
+              >
+                <button
+                  onClick={() => toggleCollection(collection._id)}
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-muted/30"
                 >
-                  <Play className="size-3" />
-                  Listen Now
-                </Button>
+                  <ChevronDown
+                    className={`size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 ${
+                      openCollectionIds.has(collection._id)
+                        ? 'rotate-0'
+                        : '-rotate-90'
+                    }`}
+                  />
+                  <BookOpen className="size-5 text-cyan-400 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {collection.title}
+                    </h2>
+                    {collection.titleGurmukhi && (
+                      <p className="text-xs text-muted-foreground/80">
+                        {collection.titleGurmukhi}
+                      </p>
+                    )}
+                  </div>
+                  <p className="shrink-0 text-xs text-muted-foreground/60">
+                    {collection.baanis.length} baanis
+                  </p>
+                </button>
+                {openCollectionIds.has(collection._id) && (
+                  <div className="divide-y divide-border border-t border-border">
+                    {collection.baanis.map((baani) => (
+                      <div
+                        key={baani._id}
+                        className="flex cursor-pointer items-center gap-4 px-5 py-3 pl-12 transition-colors hover:bg-muted/30"
+                        onClick={() =>
+                          router.push(`/gurbani/${baani._id}`)
+                        }
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-foreground">
+                            {baani.title}
+                          </h3>
+                          {baani.gurmukhi && (
+                            <p className="truncate text-xs text-muted-foreground/80">
+                              {baani.gurmukhi}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="size-8 shrink-0 rounded-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(
+                              playTrack({
+                                id: baani._id,
+                                title: baani.title,
+                                artist: '',
+                                audioUrl:
+                                  getGoogleDriveAudioUrl(
+                                    baani.audioUrl,
+                                  ) || baani.audioUrl,
+                                image: '',
+                                duration: '',
+                              }),
+                            );
+                          }}
+                        >
+                          <Play className="size-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            {(!gurbaniCollections ||
+              gurbaniCollections.length === 0) && (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Music className="mb-3 size-8 text-muted-foreground/60" />
+                <p className="text-sm text-muted-foreground">
+                  No hymns available
+                </p>
               </div>
             )}
           </div>
         </div>
       </section>
 
+      {/* Active Contests section commented out
       {contests.length > 0 && (
         <section className={sectionHeading}>
-          <div className="mx-auto max-w-7xl">
-            <SectionHeader
-              title="Active Contests"
-              subtitle="Participate and showcase your talent"
-            />
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {contests.map((contest) => (
-                <Card
-                  key={contest.id}
-                  className="transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-                >
-                  <CardContent className="space-y-3 pt-4">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-foreground">
-                        {contest.title}
-                      </h3>
-                      <Badge
-                        variant="outline"
-                        className={
-                          contest.status === 'active'
-                            ? 'border-green-500/30 bg-green-500/10 text-green-400'
-                            : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400'
-                        }
-                      >
-                        {contest.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm font-medium text-primary">
-                      {contest.prize}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="size-3" />
-                        {contest.deadline}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="size-3" />
-                        {contest.participants} participants
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          ...
         </section>
       )}
+      */}
 
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
@@ -579,7 +616,7 @@ export default function HomePage() {
             {storeProducts.slice(0, 3).map((product) => (
               <div
                 key={product.id}
-                className="w-48 shrink-0 rounded-xl bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                className="flex flex-col w-48 shrink-0 rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
               >
                 <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
                   {product.images.length > 0 ? (
@@ -605,7 +642,9 @@ export default function HomePage() {
                     variant="outline"
                     size="xs"
                     className="mt-2 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                    onClick={() => router.push('/store')}
+                    onClick={() =>
+                      router.push(`/store/${product.id}`)
+                    }
                   >
                     Shop Now
                   </Button>
