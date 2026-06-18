@@ -27,7 +27,10 @@ import { enrollCourse } from '@/store/coursesSlice';
 import {
   useGetCourseByIdQuery,
   useGetCoursesQuery,
+  useEnrollCourseMutation,
+  useGetMyEnrollmentsQuery,
 } from '@/store/api';
+import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/video';
 
 function getVideoThumbnail(videoUrl: string): string | null {
@@ -46,6 +49,7 @@ export default function CourseDetailPage() {
   const [expandedLesson, setExpandedLesson] = useState<string | null>(
     null,
   );
+  const [enrollCourseApi, { isLoading: isEnrolling }] = useEnrollCourseMutation();
   const [heroQuality, setHeroQuality] = useState<
     'maxresdefault' | 'hqdefault'
   >('maxresdefault');
@@ -66,6 +70,11 @@ export default function CourseDetailPage() {
         )
         .slice(0, 3)
     : [];
+
+  const { data: enrollmentsData } = useGetMyEnrollmentsQuery(
+    { page: 1, limit: 50 },
+    { skip: !course },
+  );
 
   if (isLoading) {
     return (
@@ -96,7 +105,9 @@ export default function CourseDetailPage() {
   const isEnrolled =
     enrolledCourses.includes(course.id) || course.isEnrolled;
   const firstVideo =
-    course.videos.length > 0 ? course.videos[0] : null;
+    course.videos.length > 0
+      ? [...course.videos].sort((a, b) => a.order - b.order).filter((v) => v.order !== 0)[0]
+      : null;
   const hasRating = course.ratingCount > 0;
   const heroImageSrc =
     course.thumbnail ??
@@ -104,8 +115,24 @@ export default function CourseDetailPage() {
       ? `https://img.youtube.com/vi/${getYouTubeVideoId(firstVideo.videoUrl)}/${heroQuality}.jpg`
       : null);
 
-  const handleEnroll = () => {
-    dispatch(enrollCourse(course.id));
+  const enrollment = isEnrolled && enrollmentsData
+    ? enrollmentsData.enrollments?.find((e) => e.course?.id === course.id)
+    : undefined;
+  const progressPercent = enrollment?.progress?.completionPercentage ?? 0;
+
+  const handleEnroll = async () => {
+    if (isEnrolled) {
+      router.push(`/courses/${course.id}/lecture/${firstVideo?.id || ''}`);
+      return;
+    }
+    try {
+      await enrollCourseApi({ courseId: course.id }).unwrap();
+      dispatch(enrollCourse(course.id));
+      toast.success('Enrolled successfully!');
+    } catch (err) {
+      const apiError = err as { data?: { message?: string } };
+      toast.error(apiError?.data?.message || 'Failed to enroll. Please try again.');
+    }
   };
 
   return (
@@ -413,7 +440,14 @@ export default function CourseDetailPage() {
                                       </p>
                                     )}
                                   </div>
-                                  <Button className="mt-4 lg:mt-0 w-fit rounded-full bg-[#2CE6C8] text-sm font-semibold text-black hover:bg-[#2CE6C8]/90">
+                                  <Button
+                                    onClick={() =>
+                                      router.push(
+                                        `/courses/${course.id}/lecture/${video.id}`,
+                                      )
+                                    }
+                                    className="mt-4 lg:mt-0 w-fit rounded-full bg-[#2CE6C8] text-sm font-semibold text-black hover:bg-[#2CE6C8]/90"
+                                  >
                                     <Play
                                       className="mr-2 size-4"
                                       fill="currentColor"
@@ -551,10 +585,15 @@ export default function CourseDetailPage() {
 
               <Button
                 className="mt-6 h-[60px] lg:h-[72px] w-full rounded-[20px] bg-[#2CE6C8] text-sm lg:text-base font-medium text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#2CE6C8]/90 active:scale-[0.98]"
+                disabled={isEnrolling}
                 onClick={handleEnroll}
               >
-                <ShieldCheck className="mr-2 size-5 lg:size-6" />
-                {isEnrolled ? 'Continue Learning' : 'Enroll Now'}
+                {isEnrolling ? (
+                  <Loader2 className="mr-2 size-5 animate-spin lg:size-6" />
+                ) : (
+                  <ShieldCheck className="mr-2 size-5 lg:size-6" />
+                )}
+                {isEnrolled ? 'Continue Learning' : isEnrolling ? 'Enrolling...' : 'Enroll Now'}
               </Button>
 
               <div className="mt-6 space-y-2">
@@ -626,15 +665,25 @@ export default function CourseDetailPage() {
                 </p>
                 <div className="mt-1 flex items-center gap-3">
                   <div className="h-1.5 flex-1 max-w-[300px] overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full w-0 rounded-full bg-[#2CE6C8] transition-all duration-500" />
+                    <div
+                      className="h-full rounded-full bg-[#2CE6C8] transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
                   </div>
                   <span className="text-xs text-[#6B7280] shrink-0">
-                    0% Complete
+                    {Math.round(progressPercent)}% Complete
                   </span>
                 </div>
               </div>
             </div>
-            <Button className="shrink-0 rounded-full bg-[#2CE6C8] px-6 lg:px-8 text-sm font-semibold text-black hover:bg-[#2CE6C8]/90">
+            <Button
+              onClick={() =>
+                router.push(
+                  `/courses/${course.id}/lecture/${firstVideo?.id || ''}`,
+                )
+              }
+              className="shrink-0 rounded-full bg-[#2CE6C8] px-6 lg:px-8 text-sm font-semibold text-black hover:bg-[#2CE6C8]/90"
+            >
               {firstVideo ? 'Continue' : 'Start Course'}
             </Button>
           </div>

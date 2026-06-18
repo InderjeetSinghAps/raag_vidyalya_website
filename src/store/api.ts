@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
-import { API_BASE_URL, DEVICE_TYPE } from '@/lib/constants'
+import { API_BASE_URL, DEVICE_TYPE, MEDIA_BASE_URL } from '@/lib/constants'
 import { getYouTubeThumbnail, getGoogleDriveDirectUrl, getGoogleDriveAudioUrl } from '@/lib/video'
 import { STORAGE_KEY, setUser, logout } from '@/store/authSlice'
-import type { User, StoreProduct, VideoTutorial, Course, CourseVideo, GurbaniCollection, BandishItem, RaagApiItem, RaagsApiResponse } from '@/types'
+import type { User, StoreProduct, VideoTutorial, Course, CourseVideo, GurbaniCollection, BandishItem, RaagApiItem, RaagsApiResponse, Transaction } from '@/types'
 
 interface ProductApiItem {
   _id: string
@@ -83,6 +83,39 @@ interface VideoApiItem {
 }
 
 // Bookmark related types
+interface TransactionApiItem {
+  _id: string
+  userId: string
+  type: 'credit' | 'debit'
+  amount: number
+  reason: string
+  title: string
+  description: string
+  referenceId: string | null
+  referenceModel: string | null
+  balanceBefore: number
+  balanceAfter: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface TransactionHistoryResponse {
+  success: boolean
+  message: string
+  transactions: TransactionApiItem[]
+  total: number
+  page: number
+  totalPages: number
+  pageSize: number
+}
+
+interface CollaboratorsApiResponse {
+  success: boolean
+  message: string
+  collaborators: import('@/types').Collaborator[]
+  total: number
+}
+
 interface BookmarkItem {
   _id: string
   userId: string
@@ -219,7 +252,7 @@ export function resolveImageUrl(path: string): string {
   const driveUrl = getGoogleDriveDirectUrl(path)
   if (driveUrl !== path) return driveUrl
   if (path.startsWith('/')) {
-    return `${new URL(API_BASE_URL).origin}${path}`
+    return `${MEDIA_BASE_URL}${path}`
   }
   return path
 }
@@ -471,7 +504,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User', 'Product', 'Video', 'Course', 'Gurbani', 'Raag', 'Enrollment', 'Bookmark'],
+  tagTypes: ['User', 'Product', 'Video', 'Course', 'Gurbani', 'Raag', 'Enrollment', 'Bookmark', 'Collaborator'],
   endpoints: (builder) => ({
     login: builder.mutation<
       { user: User; token: string; refreshToken: string },
@@ -645,6 +678,18 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
         body,
       }),
       invalidatesTags: ['User'],
+      async onQueryStarted(_, { dispatch, getState, queryFulfilled }) {
+        try {
+          await queryFulfilled
+          const state = getState() as unknown as { auth: { user: User | null; token: string | null; refreshToken: string | null } }
+          const { token, refreshToken } = state.auth
+          const result = await dispatch(api.endpoints.getUserDetail.initiate(undefined, { forceRefetch: true }))
+          if (result.data && token) {
+            dispatch(setUser({ user: result.data, token, refreshToken: refreshToken || '' }))
+          }
+        } catch {
+        }
+      },
     }),
 
     getProducts: builder.query<
@@ -793,6 +838,73 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
       invalidatesTags: ['Bookmark'],
     }),
 
+    getTransactionHistory: builder.query<
+      { transactions: Transaction[]; total: number; page: number; totalPages: number; pageSize: number },
+      { page?: number; limit?: number }
+    >({
+      query: ({ page = 1, limit = 20 }) => ({
+        url: '/user/wallet/transactions',
+        params: { page, limit },
+      }),
+      transformResponse: (response: TransactionHistoryResponse) => ({
+        transactions: response.transactions.map((t) => ({
+          _id: t._id,
+          type: t.type,
+          amount: t.amount,
+          reason: t.reason,
+          title: t.title,
+          description: t.description,
+          referenceId: t.referenceId,
+          referenceModel: t.referenceModel,
+          balanceBefore: t.balanceBefore,
+          balanceAfter: t.balanceAfter,
+          createdAt: t.createdAt,
+        })),
+        total: response.total,
+        page: response.page,
+        totalPages: response.totalPages,
+        pageSize: response.pageSize,
+      }),
+    }),
+
+    submitSuggestion: builder.mutation<void, { title: string; description: string }>({
+      query: (body) => ({
+        url: '/suggestion',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    enrollCourse: builder.mutation<void, { courseId: string }>({
+      query: (body) => ({
+        url: '/enrollment',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Course', 'Enrollment'],
+    }),
+
+    getCollaborators: builder.query<import('@/types').Collaborator[], void>({
+      query: () => '/collaborator/get-all',
+      transformResponse: (response: CollaboratorsApiResponse) =>
+        response.collaborators.map((c) => ({
+          ...c,
+          profile: c.profile ? resolveImageUrl(c.profile) : undefined,
+          coverProfile: c.coverProfile ? resolveImageUrl(c.coverProfile) : undefined,
+        })),
+      providesTags: ['Collaborator'],
+    }),
+
+    getCollaboratorById: builder.query<import('@/types').Collaborator, string>({
+      query: (id) => `/collaborator/get/${id}`,
+      transformResponse: (response: { success: boolean; message: string; collaborator: import('@/types').Collaborator }) => ({
+        ...response.collaborator,
+        profile: response.collaborator.profile ? resolveImageUrl(response.collaborator.profile) : undefined,
+        coverProfile: response.collaborator.coverProfile ? resolveImageUrl(response.collaborator.coverProfile) : undefined,
+      }),
+      providesTags: (_result, _error, id) => [{ type: 'Collaborator', id }],
+    }),
+
   }),
 })
 
@@ -819,4 +931,9 @@ export const {
   useGetCourseVideoBookmarksQuery,
   useAddCourseVideoBookmarkMutation,
   useRemoveCourseVideoBookmarkMutation,
+  useSubmitSuggestionMutation,
+  useEnrollCourseMutation,
+  useGetTransactionHistoryQuery,
+  useGetCollaboratorsQuery,
+  useGetCollaboratorByIdQuery,
 } = api

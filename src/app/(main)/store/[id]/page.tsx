@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Image from "next/image"
 import { ArrowLeft, ShoppingBag, Package, MessageCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -14,7 +13,6 @@ export default function StoreProductPage() {
   const router = useRouter()
   const { data: product, isLoading: loading, error } = useGetProductByIdQuery(params.id as string)
   const [selectedImage, setSelectedImage] = useState(0)
-
   const handleSendMessage = () => {
     if (!product?.sellerPhone) {
       toast.error("Seller contact not available")
@@ -61,12 +59,12 @@ export default function StoreProductPage() {
         <div className="group relative flex h-120 items-center justify-center overflow-hidden rounded-xl bg-background">
           {product.images.length > 0 ? (
             <>
-              <Image
+              <img
                 src={product.images[selectedImage]}
                 alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 size-full object-cover"
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
               />
               {product.images.length > 1 && (
                 <>
@@ -104,7 +102,9 @@ export default function StoreProductPage() {
                     : 'border-transparent opacity-60 hover:opacity-90'
                 }`}
               >
-                <Image src={img} alt="" width={64} height={64} className="size-16 object-cover" />
+                <img src={img} alt="" width={64} height={64} referrerPolicy="no-referrer" className="size-16 object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
               </button>
             ))}
           </div>
@@ -133,12 +133,14 @@ export default function StoreProductPage() {
         {product.sellerName && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {product.sellerAvatar && (
-              <Image
+              <img
                 src={product.sellerAvatar}
                 alt=""
                 width={24}
                 height={24}
+                referrerPolicy="no-referrer"
                 className="size-6 rounded-full object-cover"
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
               />
             )}
             <span>{product.sellerName}</span>

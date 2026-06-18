@@ -14,7 +14,20 @@ const nextConfig: NextConfig = {
         hostname: 'lh3.googleusercontent.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        pathname: '/**',
+      },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/image/:path*',
+        destination: 'http://187.127.160.207:3000/image/:path*',
+      },
+    ]
   },
 };
 

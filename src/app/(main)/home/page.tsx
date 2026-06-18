@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -12,6 +12,7 @@ import {
   Clock,
   Users,
   ShoppingBag,
+  MessageCircle,
   Play,
   Library,
   Headphones,
@@ -41,8 +42,9 @@ import {
   useGetProductsQuery,
   useGetGurbaniCollectionsQuery,
   useGetRaagsQuery,
+  useGetCollaboratorsQuery,
 } from '@/store/api';
-import type { RaagApiItem } from '@/types';
+import type { RaagApiItem, Collaborator } from '@/types';
 import { testimonials } from '@/data';
 
 const levelColors: Record<string, string> = {
@@ -146,6 +148,81 @@ const appLinks = [
   },
 ];
 
+function CollaboratorsSection() {
+  const { data: collaborators = [] } = useGetCollaboratorsQuery();
+
+  if (collaborators.length === 0) return null;
+
+  return (
+    <section className={sectionHeading}>
+      <div className="mx-auto max-w-7xl">
+        <SectionHeader
+          title="Our Collaborators"
+          subtitle="Meet the people behind Raag Vidyalya"
+        />
+        <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+          {collaborators.map((c: Collaborator) => (
+            <a
+              key={c._id}
+              href={`/collaborator/${c._id}`}
+              className="group w-72 shrink-0 overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97] flex flex-col"
+            >
+              <div className="relative h-46 bg-gradient-to-br from-primary/20 to-primary/5">
+                {c.coverProfile && (
+                  <img
+                    src={c.coverProfile}
+                    alt=""
+                    className="size-full object-cover"
+                  />
+                )}
+                <div className="absolute -bottom-8 left-4 size-16 overflow-hidden rounded-full border-2 border-card bg-muted">
+                  {c.profile ? (
+                    <img
+                      src={c.profile}
+                      alt={c.name}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center bg-primary/10">
+                      <Users className="size-6 text-primary/60" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 px-3 pb-4 pt-10">
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {c.name}
+                </h3>
+                {c.profession && (
+                  <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-0.5 text-xs font-medium text-primary">
+                    {c.profession}
+                  </span>
+                )}
+                {c.phoneNumber && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      window.open(
+                        `https://api.whatsapp.com/send/?phone=${c.phoneNumber}&text=${encodeURIComponent(`Hello ${c.name}, I am contacting you from RAAG VIDYALYA application. Want to more information about your programs.`)}`,
+                        '_blank'
+                      );
+                    }}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 active:scale-[0.97]"
+                  >
+                    <MessageCircle className="size-3.5" />
+                    Send Message
+                  </button>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -159,6 +236,9 @@ export default function HomePage() {
     limit: 3,
   });
   const storeProducts = productsData?.products ?? [];
+  const [courseThumbStates, setCourseThumbStates] = useState<
+    Record<string, 'maxresdefault' | 'hqdefault' | 'failed'>
+  >({});
   const { data: gurbaniCollections } =
     useGetGurbaniCollectionsQuery();
   const [openCollectionIds, setOpenCollectionIds] = useState<
@@ -174,6 +254,8 @@ export default function HomePage() {
   };
   const { data: raagsData } = useGetRaagsQuery();
   const apiRaags = raagsData?.raags ?? [];
+
+  const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
   const { theme } = useTheme();
   const isLightTheme = theme === 'light';
@@ -315,10 +397,13 @@ export default function HomePage() {
           />
           <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
             {courses.slice(0, 4).map((course) => {
+              const state =
+                courseThumbStates[course.id] || 'maxresdefault';
               const thumbSrc =
                 course.thumbnail ??
-                (getYouTubeVideoId(course.videos?.[0]?.videoUrl)
-                  ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/maxresdefault.jpg`
+                (state !== 'failed' &&
+                getYouTubeVideoId(course.videos?.[0]?.videoUrl)
+                  ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/${state}.jpg`
                   : null);
 
               return (
@@ -329,24 +414,24 @@ export default function HomePage() {
                 >
                   <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-background">
                     {thumbSrc ? (
-                      <img
+                      <Image
                         src={thumbSrc}
                         alt={course.title}
-                        referrerPolicy="no-referrer"
-                        className="size-full object-cover"
-                        onError={(e) => {
-                          const img = e.currentTarget;
-                          if (img.src.includes('maxresdefault')) {
-                            img.src = img.src.replace(
-                              'maxresdefault',
-                              'hqdefault',
-                            );
-                          } else {
-                            img.style.display = 'none';
-                            img.nextElementSibling?.classList.remove(
-                              'hidden',
-                            );
-                          }
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover"
+                        onError={() => {
+                          setCourseThumbStates((prev) => {
+                            const current =
+                              prev[course.id] || 'maxresdefault';
+                            if (current === 'maxresdefault') {
+                              return {
+                                ...prev,
+                                [course.id]: 'hqdefault',
+                              };
+                            }
+                            return { ...prev, [course.id]: 'failed' };
+                          });
                         }}
                       />
                     ) : null}
@@ -358,7 +443,7 @@ export default function HomePage() {
                     >
                       {course.level}
                     </Badge>
-                    <BookOpen className="hidden size-12 text-cyan-400/30" />
+                    <BookOpen className="size-12 text-cyan-400/30" />
                   </div>
                   <CardContent className="space-y-2 p-4">
                     <h3 className="font-semibold text-foreground">
@@ -458,10 +543,7 @@ export default function HomePage() {
 
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            title="Daily Gurbani"
-            subtitle="Sacred hymns for today"
-          />
+          <SectionHeader title="Daily Gurbani" subtitle="" />
           <div className="mt-6 space-y-4">
             {(gurbaniCollections ?? []).map((collection) => (
               <div
@@ -564,7 +646,7 @@ export default function HomePage() {
       )}
       */}
 
-      <section className={sectionHeading}>
+      {/* <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
           <SectionHeader
             title="What Our Students Say"
@@ -589,20 +671,14 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+
+      <CollaboratorsSection />
 
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-balance text-2xl font-bold text-foreground">
-                Our Store
-              </h2>
-              <div className="mt-1.5 h-0.5 w-10 rounded-full bg-primary" />
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Books, instruments, and more
-              </p>
-            </div>
+            <SectionHeader title="Our Store" subtitle="Books, instruments, and more" />
             <Button
               variant="ghost"
               size="sm"
@@ -620,12 +696,14 @@ export default function HomePage() {
               >
                 <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
                   {product.images.length > 0 ? (
-                    <Image
+                    <img
                       src={product.images[0]}
                       alt={product.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 12vw"
-                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                      className="absolute inset-0 size-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   ) : (
                     <ShoppingBag className="size-10 text-muted-foreground/80 transition-colors group-hover:text-cyan-400/50" />

@@ -29,19 +29,14 @@ import {
   // Music,
   Eye,
   EyeOff,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import {
   Dialog,
   DialogContent,
@@ -51,7 +46,14 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { parsePhoneNumber } from 'libphonenumber-js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { updateUser } from '@/store/authSlice';
 import { setLanguage, Language } from '@/store/languageSlice';
@@ -60,6 +62,7 @@ import {
   useUpdateUserMutation,
   useChangePasswordMutation,
   useSetPasswordMutation,
+  useSubmitSuggestionMutation,
   resolveImageUrl,
 } from '@/store/api';
 import { toast } from 'sonner';
@@ -68,10 +71,6 @@ import { contactInfo } from '@/data/contact';
 const inputClass =
   'h-11 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25';
 
-const selectClass =
-  '!h-11 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:hover:border-white/[0.15]';
-
-const modalOverlay = 'sm:max-w-md [&>button]:text-muted-foreground';
 
 const glassDialog =
   'sm:max-w-md border-border/50 bg-card/95 backdrop-blur-2xl dark:border-white/[0.06] dark:bg-card/90 [&>button]:text-muted-foreground';
@@ -141,8 +140,8 @@ const menuGroups: {
       {
         label: 'My Wallet',
         icon: Wallet,
-        action: 'toast',
-        value: 'Wallet coming soon!',
+        action: 'link',
+        value: '/wallet',
       },
       {
         label: 'Subscription',
@@ -205,7 +204,10 @@ function EditProfileModal({
   const [age, setAge] = useState(user?.age?.toString() || '');
   const [gender, setGender] = useState(user?.gender || '');
   const [phoneValue, setPhoneValue] = useState(
-    user?.phoneNumber ? `${user.countryCode || '+91'}${user.phoneNumber}` : '',
+    user?.phoneNumber || '',
+  );
+  const [countryCode, setCountryCode] = useState(
+    user?.countryCode || '+91',
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     null,
@@ -217,11 +219,8 @@ function EditProfileModal({
     setEmail(user?.email || '');
     setAge(user?.age?.toString() || '');
     setGender(user?.gender || '');
-    setPhoneValue(
-      user?.phoneNumber
-        ? `${user.countryCode || '+91'}${user.phoneNumber}`
-        : '',
-    );
+    setPhoneValue(user?.phoneNumber || '');
+    setCountryCode(user?.countryCode || '+91');
     setPhotoPreview(null);
   }, [open, user]);
 
@@ -245,36 +244,17 @@ function EditProfileModal({
     try {
       const payload: Record<string, unknown> = {};
       if (name.trim() !== user?.name) payload.userName = name.trim();
-      if (gender && gender !== user?.gender) payload.gender = gender;
+      if (gender && gender !== '0' && gender !== user?.gender) payload.gender = gender;
       if (age) payload.age = Number(age);
       if (phoneValue) {
-        const parsed = parsePhoneNumber(phoneValue);
-        if (parsed) {
-          payload.phoneNumber = parsed.nationalNumber;
-          payload.countryCode = `+${parsed.countryCallingCode}`;
-        } else {
-          payload.phoneNumber = phoneValue;
-          payload.countryCode = '';
-        }
+        payload.phoneNumber = phoneValue;
+        payload.countryCode = countryCode;
       }
       if (photoPreview) payload.profileImage = photoPreview;
 
       if (Object.keys(payload).length > 0) {
         await updateUserApi(payload).unwrap();
       }
-
-      dispatch(
-        updateUser({
-          name: name.trim(),
-          email: email.trim(),
-          gender,
-          age: age ? Number(age) : undefined,
-          phoneNumber: phoneValue || undefined,
-          countryCode: phoneValue
-            ? `+${parsePhoneNumber(phoneValue)?.countryCallingCode || ''}`
-            : undefined,
-        }),
-      );
       toast.success('Profile updated');
       onClose();
     } catch {
@@ -284,7 +264,7 @@ function EditProfileModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={glassDialog}>
+      <DialogContent className="sm:max-w-lg border-border/50 bg-card/95 backdrop-blur-2xl dark:border-white/[0.06] dark:bg-card/90 [&>button]:text-muted-foreground">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
@@ -301,7 +281,7 @@ function EditProfileModal({
           </div>
         </DialogHeader>
 
-        <div className="mt-2 space-y-4">
+        <div className="mt-2 space-y-5">
           {/* Photo */}
           <div className="flex justify-center">
             <button
@@ -314,6 +294,13 @@ function EditProfileModal({
                   <img
                     src={photoPreview}
                     alt="Preview"
+                    className="size-full object-cover"
+                  />
+                ) : user?.profileImage || user?.avatar ? (
+                  <img
+                    src={resolveImageUrl((user.profileImage || user.avatar)!)}
+                    alt=""
+                    referrerPolicy="no-referrer"
                     className="size-full object-cover"
                   />
                 ) : (
@@ -333,100 +320,78 @@ function EditProfileModal({
             />
           </div>
 
-          {/* Profile Info */}
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
-                Profile Info
-              </span>
-              <div className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Name
+              </Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+              />
             </div>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Name
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  type="email"
-                  value={email}
-                  disabled
-                  placeholder="your@email.com"
-                  className={`${inputClass} cursor-not-allowed opacity-60`}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Email
+              </Label>
+              <Input
+                type="email"
+                value={email}
+                disabled
+                placeholder="your@email.com"
+                className="cursor-not-allowed opacity-60"
+              />
             </div>
           </div>
 
-          {/* Personal Details */}
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
-                Personal Details
-              </span>
-              <div className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Age
+              </Label>
+              <Input
+                type="number"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="Age"
+                min={1}
+                max={150}
+              />
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Age
-                  </Label>
-                  <Input
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="Age"
-                    className={inputClass}
-                    min={1}
-                    max={150}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Gender
-                  </Label>
-                  <Select
-                    value={gender}
-                    onValueChange={(v) => v && setGender(v)}
-                  >
-                    <SelectTrigger className={selectClass}>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Phone
-                </Label>
-                <div className="flex gap-2">
-                  <PhoneInput
-                    value={phoneValue}
-                    onChange={(v) => setPhoneValue(v || '')}
-                    defaultCountry="IN"
-                    className="w-full"
-                  />
-                </div>
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Gender
+              </Label>
+              <Select value={gender} onValueChange={(v) => v && setGender(v)}>
+                <SelectTrigger className="h-10 w-full rounded-lg border-border/50 bg-transparent text-sm capitalize text-foreground [&>svg]:text-muted-foreground/60">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                  {['male', 'female', 'other'].map((g) => (
+                    <SelectItem
+                      key={g}
+                      value={g}
+                      className="capitalize text-foreground data-[state=checked]:text-primary data-[highlighted]:bg-primary/10"
+                    >
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Phone
+            </Label>
+            <PhoneInput
+              value={phoneValue}
+              onChange={(v) => setPhoneValue(v)}
+              countryCode={countryCode}
+              onCountryCodeChange={setCountryCode}
+            />
           </div>
 
           <Button
@@ -650,19 +615,9 @@ function ChangeLanguageModal({
   const language = useAppSelector((s) => s.language);
 
   const languages = [
-    {
-      value: 'english',
-      label: 'English',
-      display: 'English',
-      flag: '🇬🇧',
-    },
-    { value: 'hindi', label: 'Hindi', display: 'हिन्दी', flag: '🇮🇳' },
-    {
-      value: 'punjabi',
-      label: 'Punjabi',
-      display: 'ਪੰਜਾਬੀ',
-      flag: '🇮🇳',
-    },
+    { value: 'english', label: 'English', display: 'English' },
+    { value: 'hindi', label: 'Hindi', display: 'हिन्दी' },
+    { value: 'punjabi', label: 'Punjabi', display: 'ਪੰਜਾਬੀ' },
   ];
 
   const handleSelect = (value: string) => {
@@ -697,13 +652,12 @@ function ChangeLanguageModal({
               <button
                 key={lang.value}
                 onClick={() => handleSelect(lang.value)}
-                className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all ${
+                className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
                   active
                     ? 'border-primary/40 bg-primary/10 shadow-[0_0_20px_rgba(212,164,74,0.1)]'
                     : 'border-border/50 bg-transparent hover:border-primary/20 hover:bg-white/[0.02]'
                 }`}
               >
-                <span className="text-2xl">{lang.flag}</span>
                 <span
                   className={`text-base font-semibold ${active ? 'text-primary' : 'text-foreground'}`}
                 >
@@ -732,8 +686,9 @@ function SuggestionModal({
 }) {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [submitSuggestion, { isLoading }] = useSubmitSuggestionMutation();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('Please enter a title for your suggestion');
       return;
@@ -742,10 +697,15 @@ function SuggestionModal({
       toast.error('Please enter your suggestion');
       return;
     }
-    toast.success('Thank you! Your suggestion has been submitted.');
-    setTitle('');
-    setText('');
-    onClose();
+    try {
+      await submitSuggestion({ title: title.trim(), description: text.trim() }).unwrap();
+      toast.success('Thank you! Your suggestion has been submitted.');
+      setTitle('');
+      setText('');
+      onClose();
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -801,8 +761,15 @@ function SuggestionModal({
             </div>
           </div>
 
-          <Button onClick={handleSubmit} className={goldButtonClass}>
-            Submit Feedback
+          <Button onClick={handleSubmit} disabled={isLoading} className={goldButtonClass}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Submit Feedback'
+            )}
           </Button>
         </div>
       </DialogContent>
@@ -819,18 +786,32 @@ function PrivacyModal({
 }) {
   const sections = [
     {
-      title: 'Data Collection',
-      text: 'Your privacy matters to us. Raag Vidyalaya collects only the information necessary to provide our educational services, including your name, email address, and course progress data.',
+      title: 'Information Collection and Use',
+      text: 'Raag Vidyalaya respects your privacy. We do not collect personal data without your consent. If information such as name or email is collected, it is only for improving your learning experience or connecting with personal tutors.',
     },
     {
-      title: 'Your Data Is Yours',
-      text: 'We do not sell, rent, or share your personal information with third parties for their marketing purposes. Your data is stored securely and used solely to improve your learning experience.',
-      highlight:
-        'We do not sell, rent, or share your personal information',
+      title: 'Data Storage and Security',
+      text: 'All data is securely stored and protected. We use Firebase to manage user data, ensuring encrypted communication and secure access at all times.',
     },
     {
-      title: 'Deletion',
-      text: 'You may request deletion of your account and associated data at any time by contacting our support team.',
+      title: 'Audio and Media Usage',
+      text: 'All audio, notations, and materials are for educational purposes only. Redistribution, resale, or public reproduction without authorization is prohibited.',
+    },
+    {
+      title: 'Third-Party Services',
+      text: 'We may use services like Firebase Analytics or AdMob to analyze app performance. These tools may collect limited technical data (e.g., device type, app usage time) but never personal or religious data.',
+    },
+    {
+      title: 'User Rights',
+      text: 'You can request to access or delete your data anytime by contacting our support team. We respect your right to data privacy.',
+    },
+    {
+      title: 'Updates to This Policy',
+      text: 'We may update this policy periodically. Any updates will be reflected here, along with a new revision date.',
+    },
+    {
+      title: 'Contact Us',
+      text: 'For any concerns or questions, please contact us at: inderjeetsinghpbi@gmail.com',
     },
   ];
 
@@ -847,37 +828,31 @@ function PrivacyModal({
                 Privacy Policy
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                How we handle your data.
+                Last updated: October 2025
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-5 text-sm">
+            <p className="text-xs font-medium text-foreground">
+              Raag Vidyalaya is an educational platform dedicated to learning Gurmat Sangeet — the sacred music tradition of Sikhism. The app provides guidance on the 31 Raags mentioned in Sri Guru Granth Sahib Ji, with professional notations and learning resources for students and musicians.
+            </p>
             {sections.map((section, i) => (
               <div key={section.title}>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-primary/80">
                   {section.title}
                 </h4>
                 <p className="text-muted-foreground leading-relaxed">
-                  {section.highlight ? (
-                    <>
-                      {section.text.replace(section.highlight, '')}
-                      <span className="text-primary/80 font-medium">
-                        {section.highlight}
-                      </span>
-                    </>
-                  ) : (
-                    section.text
-                  )}
+                  {section.text}
                 </p>
                 {i < sections.length - 1 && (
                   <div className="mt-4 h-px bg-gradient-to-r from-primary/20 via-transparent to-transparent" />
                 )}
               </div>
             ))}
-            <p className="text-[10px] text-muted-foreground/40">
-              Last updated: June 2026
+            <p className="pt-4 text-center text-[10px] text-muted-foreground/40">
+              &copy; 2026 Raag Vidyalya. All Rights Reserved.
             </p>
           </div>
         </ScrollArea>
@@ -895,17 +870,44 @@ function TermsModal({
 }) {
   const sections = [
     {
-      title: 'Acceptance',
-      text: 'By using Raag Vidyalaya, you agree to these terms. Our platform provides educational content on Gurmat Sangeet for personal, non-commercial use only.',
+      title: 'Acceptance of Terms',
+      text: 'By accessing or using Raag Vidyalya, you agree to these Terms & Conditions. If you do not agree, please refrain from using the app.',
     },
     {
-      title: 'Intellectual Property',
-      text: 'All course materials, raag notations, and audio content are protected by copyright. You may not redistribute, resell, or publicly perform any content without written permission.',
-      highlight: 'protected by copyright',
+      title: 'Purpose of the App',
+      text: 'Raag Vidyalya is intended solely for educational and devotional learning. All materials, including Raags, notations, and teachings, are provided for personal learning and spiritual enrichment.',
     },
     {
-      title: 'Changes',
-      text: 'We reserve the right to update these terms. Continued use of the platform after changes constitutes acceptance of the new terms.',
+      title: 'User Responsibilities',
+      text: 'Users must not misuse the app or its content. Sharing, copying, or redistributing any teaching materials, audios, or notations without permission is strictly prohibited.',
+    },
+    {
+      title: 'Intellectual Property Rights',
+      text: 'All content available in the app, including text, Raag compositions, audio lessons, and visual elements, are the intellectual property of Raag Vidyalya. Unauthorized use or reproduction is not allowed.',
+    },
+    {
+      title: 'Account and Data',
+      text: 'If you create an account, you are responsible for maintaining its confidentiality. We take all reasonable steps to protect your data through secure storage (e.g., Firebase).',
+    },
+    {
+      title: 'Limitation of Liability',
+      text: 'Raag Vidyalya and its developers shall not be liable for any damages arising from the use or inability to use the app. All content is provided on an as-is basis for educational purposes only.',
+    },
+    {
+      title: 'Third-Party Links and Services',
+      text: 'Our app may include third-party services or links (such as Firebase, YouTube, or AdMob). We are not responsible for their content, data handling, or privacy policies.',
+    },
+    {
+      title: 'Subscription & Payments',
+      text: 'Some features of Raag Vidyalya may be offered as premium content or subscription-based services. All payments are handled securely through trusted platforms, and refunds are subject to respective policies.',
+    },
+    {
+      title: 'Modifications to Terms',
+      text: 'We may update these Terms & Conditions periodically. Continued use of the app after updates means you accept the revised terms.',
+    },
+    {
+      title: 'Contact Us',
+      text: 'For any concerns or clarifications regarding these terms, please contact us at: inderjeetsinghpbi@gmail.com',
     },
   ];
 
@@ -922,37 +924,31 @@ function TermsModal({
                 Terms & Conditions
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Please read these terms carefully.
+                Last updated: October 2025
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-5 text-sm">
+            <p className="text-xs font-medium text-foreground">
+              Raag Vidyalya — an educational app dedicated to learning Gurmat Sangeet, focusing on the 31 Raags of Sri Guru Granth Sahib Ji.
+            </p>
             {sections.map((section, i) => (
               <div key={section.title}>
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-primary/80">
                   {section.title}
                 </h4>
                 <p className="text-muted-foreground leading-relaxed">
-                  {section.highlight ? (
-                    <>
-                      {section.text.replace(section.highlight, '')}
-                      <span className="text-primary/80 font-medium">
-                        {section.highlight}
-                      </span>
-                    </>
-                  ) : (
-                    section.text
-                  )}
+                  {section.text}
                 </p>
                 {i < sections.length - 1 && (
                   <div className="mt-4 h-px bg-gradient-to-r from-primary/20 via-transparent to-transparent" />
                 )}
               </div>
             ))}
-            <p className="text-[10px] text-muted-foreground/40">
-              Last updated: June 2026
+            <p className="pt-4 text-center text-[10px] text-muted-foreground/40">
+              &copy; 2026 Raag Vidyalya. All Rights Reserved.
             </p>
           </div>
         </ScrollArea>
@@ -1210,9 +1206,10 @@ export default function ProfilePage() {
                     </div>
 
                     <span className="flex-1 text-left transition-all duration-200 group-hover/item:translate-x-0.5">
-                      {item.label === 'Set Password' &&
-                      user?.hasPassword
-                        ? 'Change Password'
+                      {item.label === 'Set Password'
+                        ? mounted && user?.hasPassword
+                          ? 'Change Password'
+                          : 'Set Password'
                         : item.label}
                     </span>
 

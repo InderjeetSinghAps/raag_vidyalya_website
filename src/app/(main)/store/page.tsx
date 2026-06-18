@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { ShoppingBag, Search, MessageCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -83,12 +82,12 @@ export default function StorePage() {
                 >
                   <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
                     {product.images.length > 0 ? (
-                      <Image
+                      <img
                         src={product.images[0]}
                         alt={product.name}
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover"
+                        referrerPolicy="no-referrer"
+                        className="absolute inset-0 size-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
                       />
                     ) : (
                       <ShoppingBag className="size-10 text-muted-foreground/80 transition-colors group-hover:text-cyan-400/50" />
@@ -109,12 +108,14 @@ export default function StorePage() {
                     {product.sellerName && (
                       <p className="text-[11px] text-muted-foreground/70 truncate">
                         {product.sellerAvatar && (
-                          <Image
+                          <img
                             src={product.sellerAvatar}
                             alt=""
                             width={14}
                             height={14}
+                            referrerPolicy="no-referrer"
                             className="mr-1 inline-block rounded-full object-cover align-text-bottom"
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
                           />
                         )}
                         {/* {product.sellerName} */}

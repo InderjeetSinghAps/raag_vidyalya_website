@@ -1,211 +1,165 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { CheckIcon, ChevronsUpDown } from "lucide-react"
-import * as RPNInput from "react-phone-number-input"
-import flags from "react-phone-number-input/flags"
-import { parsePhoneNumber } from "libphonenumber-js/min"
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Search } from 'lucide-react';
+import { COUNTRY_CODES } from '@/lib/country-codes';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { getPhoneLimits } from '@/lib/phone-validation';
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import { Input } from "@/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-
-type PhoneInputProps = Omit<
-  React.ComponentProps<"input">,
-  "onChange" | "value" | "ref"
-> &
-  Omit<RPNInput.Props<typeof RPNInput.default>, "onChange"> & {
-    onChange?: (value: RPNInput.Value) => void
-  }
-
-const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> =
-  React.forwardRef<
-    React.ElementRef<typeof RPNInput.default>,
-    PhoneInputProps
-  >(({ className, onChange, value, ...props }, ref) => {
-    return (
-      <RPNInput.default
-        ref={ref}
-        className={cn("flex", className)}
-        flagComponent={FlagComponent}
-        countrySelectComponent={CountrySelect}
-        inputComponent={InputComponent}
-        smartCaret={true}
-        value={value || (undefined as unknown as RPNInput.Value)}
-        onChange={(val) => {
-          if (val) {
-            try {
-              const parsed = parsePhoneNumber(val)
-              if (parsed && parsed.nationalNumber.length > 15) return
-            } catch {}
-          }
-          onChange?.(val || ("" as RPNInput.Value))
-        }}
-        {...props}
-      />
-    )
-  })
-PhoneInput.displayName = "PhoneInput"
-
-const InputComponent = React.forwardRef<
-  HTMLInputElement,
-  React.ComponentProps<"input">
->(({ className, ...props }, ref) => (
-  <Input
-    className={cn("rounded-e-lg rounded-s-none", className)}
-    {...props}
-    ref={ref}
-  />
-))
-InputComponent.displayName = "InputComponent"
-
-type CountryEntry = { label: string; value: RPNInput.Country | undefined }
-
-type CountrySelectProps = {
-  disabled?: boolean
-  value: RPNInput.Country
-  options: CountryEntry[]
-  onChange: (country: RPNInput.Country) => void
+interface PhoneInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  countryCode: string;
+  onCountryCodeChange: (code: string) => void;
+  error?: string;
+  placeholder?: string;
+  disabledCountryCode?: boolean;
+  onValidate?: (error: string | undefined) => void;
 }
 
-function CountrySelect({
-  disabled,
-  value: selectedCountry,
-  options: countryList,
+export function PhoneInput({
+  value,
   onChange,
-}: CountrySelectProps) {
-  const scrollAreaRef = React.useRef<HTMLDivElement>(null)
-  const [searchValue, setSearchValue] = React.useState("")
-  const [isOpen, setIsOpen] = React.useState(false)
+  countryCode,
+  onCountryCodeChange,
+  error,
+  placeholder = 'Enter phone number',
+  disabledCountryCode = false,
+  onValidate,
+}: PhoneInputProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected =
+    COUNTRY_CODES.find((c) => c.code === countryCode) ??
+    COUNTRY_CODES.find((c) => c.code === '+91')!;
+
+  const filtered = search
+    ? COUNTRY_CODES.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.code.includes(search) ||
+          c.isoCode.toLowerCase().includes(search.toLowerCase()),
+      )
+    : COUNTRY_CODES;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = 320;
+    setDropdownPosition(spaceBelow >= dropdownHeight ? 'bottom' : 'top');
+  }, [open]);
 
   return (
-    <Popover
-      open={isOpen}
-      modal
-      onOpenChange={(open) => {
-        setIsOpen(open)
-        if (open) setSearchValue("")
-      }}
-    >
-      <PopoverTrigger
-        className="group/popover-trigger flex items-center gap-1 rounded-e-none rounded-s-lg border border-border bg-background px-3 text-sm font-medium whitespace-nowrap hover:bg-muted focus-visible:z-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
-        disabled={disabled}
-      >
-        <FlagComponent
-          country={selectedCountry}
-          countryName={selectedCountry}
-        />
-        <ChevronsUpDown
+    <div ref={ref} className="relative">
+      <div className="flex h-11 items-center rounded-lg border border-border bg-background px-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20">
+        <button
+          type="button"
+          onClick={() => !disabledCountryCode && setOpen(!open)}
+          disabled={disabledCountryCode}
           className={cn(
-            "-mr-2 size-4 opacity-50",
-            disabled ? "hidden" : "opacity-100",
+            'flex items-center gap-1.5 shrink-0 pr-3',
+            disabledCountryCode && 'opacity-50',
           )}
-        />
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command>
-          <CommandInput
-            value={searchValue}
-            onValueChange={(val) => {
-              setSearchValue(val)
-              setTimeout(() => {
-                if (scrollAreaRef.current) {
-                  const viewport =
-                    scrollAreaRef.current.querySelector(
-                      "[data-radix-scroll-area-viewport]",
-                    )
-                  if (viewport) {
-                    viewport.scrollTop = 0
-                  }
+        >
+          <span className="text-base leading-none">{selected.flag}</span>
+          <span className="text-sm font-medium text-foreground">
+            {selected.code}
+          </span>
+          <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+        </button>
+
+        <div className="h-5 w-px bg-border" />
+
+        <input
+          type="tel"
+          value={value}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, '');
+            if (digits.length <= selected.maxLength) {
+              onChange(digits);
+              const limits = getPhoneLimits(countryCode);
+              if (limits) {
+                if (digits.length === 0) {
+                  onValidate?.('Phone number is required');
+                } else if (digits.length < limits.minLength) {
+                  onValidate?.(`Phone number must be at least ${limits.minLength} digits`);
+                } else {
+                  onValidate?.(undefined);
                 }
-              }, 0)
-            }}
-            placeholder="Search country..."
-          />
-          <CommandList>
-            <ScrollArea ref={scrollAreaRef} className="h-72">
-              <CommandEmpty>No country found.</CommandEmpty>
-              <CommandGroup>
-                {countryList.map(({ value, label }) =>
-                  value ? (
-                    <CountrySelectOption
-                      key={value}
-                      country={value}
-                      countryName={label}
-                      selectedCountry={selectedCountry}
-                      onChange={onChange}
-                      onSelectComplete={() => setIsOpen(false)}
-                    />
-                  ) : null,
-                )}
-              </CommandGroup>
-            </ScrollArea>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
-}
+              }
+            }
+          }}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground ml-3"
+        />
+      </div>
 
-interface CountrySelectOptionProps {
-  country: RPNInput.Country
-  countryName: string
-  selectedCountry: RPNInput.Country
-  onChange: (country: RPNInput.Country) => void
-  onSelectComplete: () => void
-}
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
 
-function CountrySelectOption({
-  country,
-  countryName,
-  selectedCountry,
-  onChange,
-  onSelectComplete,
-}: CountrySelectOptionProps) {
-  return (
-    <CommandItem
-      onSelect={() => {
-        onChange(country)
-        onSelectComplete()
-      }}
-    >
-      <CheckIcon
-        className={cn(
-          "mr-2 size-4",
-          selectedCountry === country ? "opacity-100" : "opacity-0",
-        )}
-      />
-      <FlagComponent country={country} countryName={countryName} />
-      <span className="flex-1 text-sm">{countryName}</span>
-    </CommandItem>
-  )
-}
+      {open && (
+        <div className={`absolute left-0 z-50 w-72 rounded-xl border border-border bg-card shadow-xl max-h-80 overflow-hidden ${
+          dropdownPosition === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
+        }`}>
+          <div className="p-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search country..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-10 rounded-lg border border-border bg-background"
+                autoFocus
+              />
+            </div>
+          </div>
 
-function FlagComponent({ country, countryName }: RPNInput.FlagProps) {
-  const Flag = flags[country]
-
-  return (
-    <span className="flex h-4 w-6 overflow-hidden rounded-sm">
-      {Flag ? (
-        <Flag title={countryName} />
-      ) : (
-        <span className="size-4 text-[10px]">{countryName?.[0]}</span>
+          <div className="max-h-64 overflow-y-auto">
+            {filtered.map((country) => (
+              <button
+                key={country.isoCode + country.code}
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                onClick={() => {
+                  const newLimits = getPhoneLimits(country.code);
+                  if (newLimits && value.length > newLimits.maxLength) {
+                    onChange(value.slice(0, newLimits.maxLength));
+                  }
+                  onCountryCodeChange(country.code);
+                  setOpen(false);
+                  setSearch('');
+                }}
+              >
+                <span className="text-base leading-none">{country.flag}</span>
+                <span className="flex-1 text-left">{country.name}</span>
+                <span className="text-muted-foreground text-xs">
+                  {country.code}
+                </span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-4 text-sm text-muted-foreground text-center">
+                No results
+              </p>
+            )}
+          </div>
+        </div>
       )}
-    </span>
-  )
+    </div>
+  );
 }
-
-export { PhoneInput }
