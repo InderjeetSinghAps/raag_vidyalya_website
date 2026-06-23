@@ -58,11 +58,6 @@ export function TopNavbar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLDivElement>(null);
 
-  console.log(
-    '\n===================== 🟢 user =====================',
-  );
-  console.log(user);
-  console.log('=================================================\n');
   const handleLogout = async () => {
     try {
       await logoutApi().unwrap();
@@ -325,7 +320,9 @@ export function TopNavbar() {
             >
               {user.profileImage || user.avatar ? (
                 <img
-                  src={resolveImageUrl((user.profileImage || user.avatar)!)}
+                  src={resolveImageUrl(
+                    (user.profileImage || user.avatar)!,
+                  )}
                   alt=""
                   referrerPolicy="no-referrer"
                   className="size-10 shrink-0 rounded-full object-cover"

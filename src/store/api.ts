@@ -4,6 +4,7 @@ import { API_BASE_URL, DEVICE_TYPE, MEDIA_BASE_URL } from '@/lib/constants'
 import { getYouTubeThumbnail, getGoogleDriveDirectUrl, getGoogleDriveAudioUrl } from '@/lib/video'
 import { STORAGE_KEY, setUser, logout } from '@/store/authSlice'
 import type { User, StoreProduct, VideoTutorial, Course, CourseVideo, GurbaniCollection, BandishItem, RaagApiItem, RaagsApiResponse, Transaction } from '@/types'
+import { toast } from 'sonner'
 
 interface ProductApiItem {
   _id: string
@@ -19,7 +20,7 @@ interface ProductApiItem {
   isActive: boolean
   createdAt: string
   updatedAt: string
-  user: { _id: string; userName: string; profileImage?: string; phoneNumber?: string; countryCode?: string }
+  user: { _id: string; userName: string; email?: string; profileImage?: string; phoneNumber?: string; countryCode?: string; role?: number; roleName?: string }
 }
 
 interface GurbaniApiResponse {
@@ -69,6 +70,32 @@ interface UserDetailApiResponse {
   message: string
   user: User
   todayTip: string
+}
+
+interface UserWithProductsApiResponse {
+  success: boolean
+  message: string
+  user: {
+    _id: string
+    userName: string
+    email: string
+    role: number
+    phoneNumber: string
+    countryCode: string
+    age: number
+    gender: number
+    isOtpVerified: boolean
+    isVerified: boolean
+    language: string
+    createdAt: string
+    updatedAt: string
+    profileImage?: string
+    roleName: string
+    genderName: string
+    deviceTypeName: string | null
+  }
+  products: ProductApiItem[]
+  productsTotal: number
 }
 
 interface VideoApiItem {
@@ -251,6 +278,10 @@ interface VideosApiResponse {
 export function resolveImageUrl(path: string): string {
   const driveUrl = getGoogleDriveDirectUrl(path)
   if (driveUrl !== path) return driveUrl
+  if (path.startsWith('/image/')) {
+    const upstream = `${MEDIA_BASE_URL}${path}`
+    return `/api/proxy-image?url=${encodeURIComponent(upstream)}`
+  }
   if (path.startsWith('/')) {
     return `${MEDIA_BASE_URL}${path}`
   }
@@ -376,6 +407,9 @@ function mapProduct(p: ProductApiItem): StoreProduct {
     sellerAvatar: p.user?.profileImage ? resolveImageUrl(p.user.profileImage) : undefined,
     sellerPhone: p.user?.phoneNumber,
     sellerCountryCode: p.user?.countryCode,
+    sellerEmail: p.user?.email,
+    sellerRole: p.user?.roleName,
+    sellerUserId: p.user?._id,
   }
 }
 
@@ -431,8 +465,17 @@ function extractAuthResponse(
   return { user: cleanUser, token, refreshToken: refreshToken || '' }
 }
 
+function resolveBaseUrl(url: string) {
+  return `${API_BASE_URL}${url.startsWith('/') ? url : '/' + url}`
+}
+
+function resolveArgs(args: string | FetchArgs): string | FetchArgs {
+  if (typeof args === 'string') return resolveBaseUrl(args)
+  return { ...args, url: resolveBaseUrl(args.url) }
+}
+
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE_URL,
+  baseUrl: '',
   prepareHeaders: (headers) => {
     if (typeof window !== 'undefined') {
       const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
@@ -456,7 +499,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   api,
   extraOptions,
 ) => {
-  const result = await rawBaseQuery(args, api, extraOptions)
+  const result = await rawBaseQuery(resolveArgs(args), api, extraOptions)
   if (result.error?.status === 401) {
     if (typeof window !== 'undefined') {
       const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
@@ -465,11 +508,11 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
           const state = JSON.parse(raw)
           if (state.refreshToken) {
             const refreshResult = await rawBaseQuery(
-              {
+              resolveArgs({
                 url: '/user/refresh-token',
                 method: 'POST',
                 body: { refreshToken: state.refreshToken },
-              },
+              }),
               api,
               extraOptions,
             )
@@ -484,7 +527,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
                 } else {
                   localStorage.setItem(STORAGE_KEY, serialized)
                 }
-                return rawBaseQuery(args, api, extraOptions)
+                return rawBaseQuery(resolveArgs(args), api, extraOptions)
               }
             }
           }
@@ -493,9 +536,11 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
           /* fall through to redirect */
         }
       }
+      toast.error('Unauthorized, please login to continue')
       localStorage.removeItem(STORAGE_KEY)
       sessionStorage.removeItem(STORAGE_KEY)
-      window.location.href = '/login'
+      api.dispatch(logout())
+      window.location.replace('/login?redirectTo=' + encodeURIComponent(window.location.pathname))
     }
   }
   return result
@@ -717,6 +762,30 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
       providesTags: ['Product'],
     }),
 
+    getUserWithProducts: builder.query<
+      { user: { id: string; userName: string; email: string; profileImage: string; phoneNumber: string; countryCode: string; roleName: string; isVerified: boolean; verifiedIcon: string; createdAt: string }; products: StoreProduct[]; productsTotal: number },
+      string
+    >({
+      query: (id) => ({ url: `/user/${id}/with-products` }),
+      transformResponse: (response: UserWithProductsApiResponse) => ({
+        user: {
+          id: response.user._id,
+          userName: response.user.userName,
+          email: response.user.email,
+          profileImage: resolveImageUrl(response.user.profileImage || ''),
+          phoneNumber: response.user.phoneNumber,
+          countryCode: response.user.countryCode,
+          roleName: response.user.roleName,
+          isVerified: response.user.isVerified,
+          verifiedIcon: response.user.isVerified ? '/verified-symbol-icon.svg' : '',
+          createdAt: response.user.createdAt,
+        },
+        products: response.products.map(mapProduct),
+        productsTotal: response.productsTotal,
+      }),
+      providesTags: ['Product'],
+    }),
+
     getVideos: builder.query<
       {
         videos: VideoTutorial[]
@@ -922,6 +991,7 @@ export const {
   useUpdateUserMutation,
   useGetProductsQuery,
   useGetProductByIdQuery,
+  useGetUserWithProductsQuery,
   useGetVideosQuery,
   useGetCoursesQuery,
   useGetCourseByIdQuery,

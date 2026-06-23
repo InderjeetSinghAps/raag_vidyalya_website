@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, ShoppingBag, Package, MessageCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { ArrowLeft, ShoppingBag, Package, MessageCircle, ChevronLeft, ChevronRight, Loader2, User, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ export default function StoreProductPage() {
   const router = useRouter()
   const { data: product, isLoading: loading, error } = useGetProductByIdQuery(params.id as string)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [avatarError, setAvatarError] = useState(false)
   const handleSendMessage = () => {
     if (!product?.sellerPhone) {
       toast.error("Seller contact not available")
@@ -128,24 +129,59 @@ export default function StoreProductPage() {
           )}
         </div>
 
-        <p className="leading-relaxed text-muted-foreground">{product.description}</p>
-
-        {product.sellerName && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {product.sellerAvatar && (
-              <img
-                src={product.sellerAvatar}
-                alt=""
-                width={24}
-                height={24}
-                referrerPolicy="no-referrer"
-                className="size-6 rounded-full object-cover"
-                onError={(e) => { e.currentTarget.style.display = 'none' }}
-              />
-            )}
-            <span>{product.sellerName}</span>
+        {product.sellerName && product.sellerUserId && (
+          <div
+            onClick={() => router.push(`/user/${product.sellerUserId}`)}
+            className="flex h-auto cursor-pointer items-center gap-4 rounded-3xl bg-[#0B1020] p-4 shadow-[0_15px_40px_rgba(0,0,0,.4)] transition-colors hover:bg-[#0D1528]"
+          >
+            <div className="relative shrink-0">
+              {product.sellerAvatar && !avatarError ? (
+                <img
+                  src={product.sellerAvatar}
+                  alt={product.sellerName}
+                  referrerPolicy="no-referrer"
+                  className="size-[60px] rounded-full object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className="flex size-[60px] items-center justify-center rounded-full bg-white/5">
+                  <User className="size-6 text-white/40" />
+                </div>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 flex size-6 items-center justify-center rounded-full shadow-[0_0_10px_rgba(245,190,50,.4)] transition-transform duration-250 hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #f7d36a, #d4a017)',
+                  border: '2px solid #0f172a',
+                }}
+              >
+                <ShieldCheck className="size-3 text-black" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center flex-wrap gap-2">
+                <p className="text-base font-semibold text-white">
+                  {product.sellerName}
+                </p>
+                <ShieldCheck className="size-3.5 shrink-0 text-amber-400" />
+              </div>
+              <span className="mt-0.5 inline-block rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">
+                ✓ Verified Seller
+              </span>
+              {product.sellerEmail && (
+                <p className="mt-1 text-[10px] text-[#6B7280] truncate">
+                  {product.sellerEmail}
+                </p>
+              )}
+              {product.sellerPhone && (
+                <p className="text-[11px] text-[#6B7280]">
+                  {product.sellerCountryCode ? `${product.sellerCountryCode} ` : ''}{product.sellerPhone}
+                </p>
+              )}
+            </div>
           </div>
         )}
+
+        <p className="whitespace-pre-line leading-relaxed text-muted-foreground">{product.description}</p>
         {product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {product.tags.map((tag) => (
@@ -153,7 +189,7 @@ export default function StoreProductPage() {
                 key={tag}
                 className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs text-cyan-400"
               >
-                {tag}
+#{tag}
               </span>
             ))}
           </div>

@@ -108,6 +108,9 @@ export interface StoreProduct {
   sellerAvatar?: string;
   sellerPhone?: string;
   sellerCountryCode?: string;
+  sellerEmail?: string;
+  sellerRole?: string;
+  sellerUserId?: string;
 }
 
 export interface CartItem {

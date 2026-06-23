@@ -59,7 +59,7 @@ export default function AboutPage() {
 
         {/* Hero */}
         <section className="grid gap-10 lg:grid-cols-2">
-          <div className="relative">
+          <div className="relative pt-9">
             <div
               className="pointer-events-none absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-[#D4A44A]/[0.04] blur-[120px]"
               aria-hidden="true"
@@ -68,7 +68,7 @@ export default function AboutPage() {
             <h2 className="font-display text-balance text-3xl font-bold text-foreground">
               Preserving the Divine Art of Gurmat Sangeet
             </h2>
-            <p className="mt-4 leading-relaxed text-muted-foreground">
+            <p className="mt-4 leading-relaxed text-muted-foreground text-justify ">
               Raag Vidyalaya is dedicated to preserving and sharing
               the sacred tradition of Gurmat Sangeet — the classical
               music of the Sikh faith. Our platform brings together
@@ -76,7 +76,7 @@ export default function AboutPage() {
               to make this divine art accessible to learners
               worldwide.
             </p>
-            <p className="mt-4 leading-relaxed text-muted-foreground">
+            <p className="mt-4 leading-relaxed text-muted-foreground text-justify">
               Whether you are a beginner taking your first steps or an
               advanced practitioner deepening your understanding, Raag
               Vidyalaya offers structured courses, detailed raag

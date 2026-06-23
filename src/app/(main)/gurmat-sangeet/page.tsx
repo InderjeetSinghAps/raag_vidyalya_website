@@ -113,12 +113,13 @@ export default function GurmatSangeetPage() {
                   <Button
                     variant="outline"
                     className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleListen(raag);
-                    }}
+                    // onClick={(e) => {
+                    // e.stopPropagation();
+                    // handleListen(raag);
+                    // }}
                   >
-                    Listen
+                    {/* Listen */}
+                    View Details
                   </Button>
                 </div>
               </CardContent>

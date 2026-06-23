@@ -12,18 +12,18 @@ interface AuthState {
 }
 
 export function loadFromStorage(): AuthState {
-  if (typeof window === 'undefined') return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
+  if (typeof window === 'undefined') return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: true }
   let raw: string | null = null
   try {
     raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
   } catch {
-    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
+    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: true }
   }
-  if (!raw) return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
+  if (!raw) return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: true }
   try {
     return JSON.parse(raw)
   } catch {
-    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false }
+    return { user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: true }
   }
 }
 

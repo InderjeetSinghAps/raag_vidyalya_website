@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,6 +9,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { AuthHeader } from "@/components/auth/AuthHeader"
+import { AuthSuspenseFallback } from "@/components/auth/AuthSuspenseFallback"
 import { GoldDivider } from "@/components/auth/GoldDivider"
 import { GlassInput } from "@/components/auth/GlassInput"
 import { PasswordField } from "@/components/auth/PasswordField"
@@ -48,7 +49,7 @@ function GoogleLoginButton({ socialLogin }: { socialLogin: ReturnType<typeof use
         }).unwrap()
 
         toast.success("Welcome!")
-        router.push("/home")
+        router.push(redirectTo)
       } catch {
         toast.error("Google sign in failed")
       } finally {
@@ -92,9 +93,11 @@ function GoogleLoginButton({ socialLogin }: { socialLogin: ReturnType<typeof use
 }
 */
 
-export default function LoginPage() {
+function LoginForm() {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirectTo") || "/home"
   const [login, { isLoading: isSubmitting }] = useLoginMutation()
   const [socialLogin] = useSocialLoginMutation()
   const [showPassword, setShowPassword] = useState(false)
@@ -110,7 +113,7 @@ export default function LoginPage() {
     try {
       await login({ email: data.email, password: data.password, rememberMe }).unwrap()
       toast.success("Welcome back!")
-      router.push("/home")
+      router.push(redirectTo)
     } catch (error: unknown) {
       const msg =
         (error as { data?: { message?: string } })?.data?.message ||
@@ -194,5 +197,13 @@ export default function LoginPage() {
       </p>
       </AuthLayout>
     </>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthSuspenseFallback />}>
+      <LoginForm />
+    </Suspense>
   )
 }

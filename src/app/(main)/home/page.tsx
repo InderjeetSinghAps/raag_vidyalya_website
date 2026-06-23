@@ -18,6 +18,7 @@ import {
   Headphones,
   GraduationCap,
   TrendingUp,
+  Music2,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -37,6 +38,7 @@ import {
   getGoogleDriveAudioUrl,
   getYouTubeVideoId,
 } from '@/lib/video';
+import { LIVE_AMRITSAR_KIRTAN_URL } from '@/lib/constants';
 import {
   useGetCoursesQuery,
   useGetProductsQuery,
@@ -44,8 +46,13 @@ import {
   useGetRaagsQuery,
   useGetCollaboratorsQuery,
 } from '@/store/api';
-import type { RaagApiItem, Collaborator } from '@/types';
+import type {
+  RaagApiItem,
+  Collaborator,
+  StoreProduct,
+} from '@/types';
 import { testimonials } from '@/data';
+import { toast } from 'sonner';
 
 const levelColors: Record<string, string> = {
   Beginner: 'text-emerald-400 border-emerald-500/20',
@@ -205,7 +212,7 @@ function CollaboratorsSection() {
                       e.preventDefault();
                       window.open(
                         `https://api.whatsapp.com/send/?phone=${c.phoneNumber}&text=${encodeURIComponent(`Hello ${c.name}, I am contacting you from RAAG VIDYALYA application. Want to more information about your programs.`)}`,
-                        '_blank'
+                        '_blank',
                       );
                     }}
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 active:scale-[0.97]"
@@ -223,6 +230,107 @@ function CollaboratorsSection() {
   );
 }
 
+function StoreCard({ product }: { product: StoreProduct }) {
+  const router = useRouter();
+
+  const handleSendMessage = (
+    e: React.MouseEvent,
+    prod: StoreProduct,
+  ) => {
+    e.stopPropagation();
+    if (!prod.sellerPhone) {
+      toast.error('Seller contact not available');
+      return;
+    }
+    const clean = prod.sellerPhone.replace(/\D/g, '');
+    const message = `Hello! I'm interested in the "${prod.name}".\n\u{1F4CC} Description: ${prod.description}\n\u{1F4B0} Price: \u20B9${prod.price}${prod.originalPrice ? ` (Original: \u20B9${prod.originalPrice})` : ''}\n\u{1F3AF} Category: ${prod.category}\nCould you please share more details or help me with the purchase?`;
+    window.open(
+      `https://api.whatsapp.com/send/?phone=${clean}&text=${encodeURIComponent(message)}`,
+      '_blank',
+    );
+  };
+
+  return (
+    <div
+      key={product.id}
+      onClick={() => router.push(`/store/${product.id}`)}
+      className="flex flex-col w-64 shrink-0 group cursor-pointer rounded-xl border border-border bg-background transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)] active:scale-[0.97]"
+    >
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
+        {product.images.length > 0 ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          <ShoppingBag className="size-10 text-muted-foreground/80 transition-colors group-hover:text-cyan-400/50" />
+        )}
+      </div>
+      <div className="flex flex-1 flex-col space-y-2 p-3">
+        <p className="truncate text-sm font-medium text-foreground">
+          {product.name}
+        </p>
+        <div className="flex items-baseline gap-2">
+          {product.originalPrice && (
+            <span className="text-xs text-muted-foreground/80 line-through">
+              ₹{product.originalPrice}
+            </span>
+          )}
+          <span className="text-sm font-bold text-cyan-400">
+            ₹{product.price}
+          </span>
+        </div>
+        {product.sellerName && (
+          <p className="text-[11px] text-muted-foreground/70 truncate">
+            {product.sellerAvatar && (
+              <img
+                src={product.sellerAvatar}
+                alt=""
+                width={14}
+                height={14}
+                referrerPolicy="no-referrer"
+                className="mr-1 inline-block rounded-full object-cover align-text-bottom"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <span className="text-primary">
+              {product.sellerName}{' '}
+            </span>
+          </p>
+        )}
+        {product.tags && product.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {product.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-400"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-auto w-full border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
+          onClick={(e) => handleSendMessage(e, product)}
+        >
+          <MessageCircle className="size-3" />
+          Send Message
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -233,7 +341,7 @@ export default function HomePage() {
   const courses = coursesData?.courses ?? [];
   const { data: productsData } = useGetProductsQuery({
     page: 1,
-    limit: 3,
+    limit: 4,
   });
   const storeProducts = productsData?.products ?? [];
   const [courseThumbStates, setCourseThumbStates] = useState<
@@ -353,7 +461,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
+<section className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {featureCards.map((feature) => (
             <div
@@ -388,6 +496,78 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+{LIVE_AMRITSAR_KIRTAN_URL && (
+        <section className={sectionHeading}>
+          <div className="mx-auto max-w-7xl">
+            <SectionHeader
+              title="Featured Live Kirtan"
+              subtitle="Live from Darbar Sahib, Golden Temple, Amritsar"
+            />
+            <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+              <Card
+                className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                onClick={() => router.push('/live')}
+              >
+                <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-900/40 to-amber-950/60">
+                  <div className="flex size-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                    <Play className="size-8 text-white/80" />
+                  </div>
+                  <Badge className="absolute left-2 top-2 flex items-center gap-1 border-0 bg-red-500/90 px-2 py-1 text-[10px] font-semibold text-white uppercase tracking-wider">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                    </span>
+                    LIVE
+                  </Badge>
+                </div>
+                <CardContent className="space-y-2 p-4">
+                  <h3 className="font-semibold text-foreground">Darbar Sahib</h3>
+                  <p className="text-xs text-muted-foreground">Golden Temple, Amritsar</p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    </span>
+                    Streaming now
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                  >
+                    Listen Now
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card
+                className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                onClick={() => router.push('/riyaz/tanpura')}
+              >
+                <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-800/50 to-[#0B1020]">
+                  <div className="flex size-16 items-center justify-center rounded-full bg-[rgba(212,160,23,.15)] backdrop-blur-sm">
+                    <Music2 className="size-8 text-amber-400/80" />
+                  </div>
+                </div>
+                <CardContent className="space-y-2 p-4">
+                  <h3 className="font-semibold text-foreground">Daily Riyaz</h3>
+                  <p className="text-xs text-muted-foreground">Tanpura practice & exercises</p>
+                  <div className="flex items-center gap-1 text-xs text-amber-400/80">
+                    Build your daily practice routine
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto w-full border-amber-500/50 text-amber-400 transition-all duration-200 hover:bg-amber-500/10 active:scale-[0.96]"
+                  >
+                    Start Practice
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+)}
 
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
@@ -430,7 +610,10 @@ export default function HomePage() {
                                 [course.id]: 'hqdefault',
                               };
                             }
-                            return { ...prev, [course.id]: 'failed' };
+                            return {
+                              ...prev,
+                              [course.id]: 'failed',
+                            };
                           });
                         }}
                       />
@@ -486,6 +669,9 @@ export default function HomePage() {
               {apiRaags.slice(0, 8).map((raag: RaagApiItem) => (
                 <CarouselItem
                   key={raag._id}
+                  onClick={() =>
+                    router.push(`/gurmat-sangeet/${raag._id}`)
+                  }
                   className="basis-auto pl-4"
                 >
                   <div className="flex h-full w-56 flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
@@ -515,21 +701,8 @@ export default function HomePage() {
                       variant="outline"
                       size="sm"
                       className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                      onClick={() =>
-                        dispatch(
-                          playTrack({
-                            id: raag._id,
-                            title: raag.name,
-                            artist: '',
-                            audioUrl: raag.audioUrl || '',
-                            image: '',
-                            duration: '',
-                          }),
-                        )
-                      }
                     >
-                      <Play className="size-3" />
-                      Listen
+                      View Details
                     </Button>
                   </div>
                 </CarouselItem>
@@ -578,7 +751,7 @@ export default function HomePage() {
                 </button>
                 {openCollectionIds.has(collection._id) && (
                   <div className="divide-y divide-border border-t border-border">
-                    {collection.baanis.map((baani) => (
+                    {(collection.baanis ?? []).map((baani) => (
                       <div
                         key={baani._id}
                         className="flex cursor-pointer items-center gap-4 px-5 py-3 pl-12 transition-colors hover:bg-muted/30"
@@ -625,60 +798,28 @@ export default function HomePage() {
                 )}
               </div>
             ))}
-            {(!gurbaniCollections ||
-              gurbaniCollections.length === 0) && (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <Music className="mb-3 size-8 text-muted-foreground/60" />
-                <p className="text-sm text-muted-foreground">
-                  No hymns available
-                </p>
-              </div>
-            )}
           </div>
+          {(!gurbaniCollections ||
+            gurbaniCollections.length === 0) && (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Music className="mb-3 size-8 text-muted-foreground/60" />
+              <p className="text-sm text-muted-foreground">
+                No hymns available
+              </p>
+            </div>
+          )}
         </div>
       </section>
-
-      {/* Active Contests section commented out
-      {contests.length > 0 && (
-        <section className={sectionHeading}>
-          ...
-        </section>
-      )}
-      */}
-
-      {/* <section className={sectionHeading}>
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            title="What Our Students Say"
-            subtitle="Hear from our community"
-          />
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
-            {testimonials.map((t) => (
-              <div
-                key={t.id}
-                className="w-72 shrink-0 rounded-xl bg-card p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-              >
-                <p className="text-sm italic leading-relaxed text-foreground">
-                  &ldquo;{t.text}&rdquo;
-                </p>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">
-                    {t.name}
-                  </span>
-                  <StarRating rating={t.rating} size="xs" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
 
       <CollaboratorsSection />
 
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
-            <SectionHeader title="Our Store" subtitle="Books, instruments, and more" />
+            <SectionHeader
+              title="Our Store"
+              subtitle="Books, instruments, and more"
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -689,45 +830,8 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
-            {storeProducts.slice(0, 3).map((product) => (
-              <div
-                key={product.id}
-                className="flex flex-col w-48 shrink-0 rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-              >
-                <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-background">
-                  {product.images.length > 0 ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 size-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <ShoppingBag className="size-10 text-muted-foreground/80 transition-colors group-hover:text-cyan-400/50" />
-                  )}
-                </div>
-                <div className="p-4 space-y-2">
-                  <h3 className="text-sm font-medium text-foreground truncate">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm font-semibold text-primary">
-                    ₹{product.price}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    className="mt-2 w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                    onClick={() =>
-                      router.push(`/store/${product.id}`)
-                    }
-                  >
-                    Shop Now
-                  </Button>
-                </div>
-              </div>
+            {storeProducts.slice(0, 5).map((product) => (
+              <StoreCard key={product.id} product={product} />
             ))}
           </div>
         </div>
@@ -737,30 +841,22 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground">
           &copy; 2026 Raag Vidyalaya. All rights reserved.
         </p>
-        <div className="relative">
-          {/* <h2 className="font-display text-balance text-2xl font-bold text-foreground sm:text-3xl">
-            Download the App
-          </h2> */}
-          {/* <p className="mt-2 text-sm text-muted-foreground">
-            Access Raag Vidyalaya on the go.
-          </p> */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            {appLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center leading-none"
-              >
-                <img
-                  src={link.icon}
-                  alt={link.label}
-                  className="block h-10 w-auto"
-                />
-              </a>
-            ))}
-          </div>
+        <div className="relative mt-6 flex flex-wrap items-center justify-center gap-4">
+          {appLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center leading-none"
+            >
+              <img
+                src={link.icon}
+                alt={link.label}
+                className="block h-10 w-auto"
+              />
+            </a>
+          ))}
         </div>
       </footer>
     </div>

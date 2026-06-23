@@ -129,7 +129,7 @@ export default function StorePage() {
                             key={tag}
                             className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-400"
                           >
-                            {tag}
+                            #{tag}
                           </span>
                         ))}
                       </div>

@@ -1,58 +1,87 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Play, Search, Clock, User as UserIcon, Loader2, Bookmark } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Play,
+  Search,
+  Clock,
+  User as UserIcon,
+  Loader2,
+  Bookmark,
+  Upload,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import {
   useGetVideosQuery,
   useGetCourseVideoBookmarksQuery,
   useAddCourseVideoBookmarkMutation,
   useRemoveCourseVideoBookmarkMutation,
-} from "@/store/api"
+} from '@/store/api';
+import { UPLOAD_VIDEO_URL } from '@/lib/constants';
 
 export default function VideosPage() {
-  const router = useRouter()
-  const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [page, setPage] = useState(1)
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 600)
-    return () => clearTimeout(timer)
-  }, [search])
+    const timer = setTimeout(() => setDebouncedSearch(search), 600);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading: loading } = useGetVideosQuery({
     page,
     limit: 12,
     search: debouncedSearch || undefined,
-  })
-  const videos = data?.videos ?? []
-  const totalPages = data?.totalPages ?? 1
+  });
+  const videos = data?.videos ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
-  const { data: bookmarksData } = useGetCourseVideoBookmarksQuery()
-  const bookmarkedUrls = new Set(bookmarksData?.bookmarks?.map((b) => b.videoUrl) ?? [])
-  const [addBookmark] = useAddCourseVideoBookmarkMutation()
-  const [removeBookmark] = useRemoveCourseVideoBookmarkMutation()
+  const { data: bookmarksData } = useGetCourseVideoBookmarksQuery();
+  const bookmarkedUrls = new Set(
+    bookmarksData?.bookmarks?.map((b) => b.videoUrl) ?? [],
+  );
+  const [addBookmark] = useAddCourseVideoBookmarkMutation();
+  const [removeBookmark] = useRemoveCourseVideoBookmarkMutation();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-balance text-2xl font-bold text-foreground">Videos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Learn Gurmat Sangeet through expert-led videos</p>
+          <h1 className="text-balance text-2xl font-bold text-foreground">
+            Videos
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Learn Gurmat Sangeet through expert-led videos
+          </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search videos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border bg-background pl-10 text-muted-foreground placeholder:text-muted-foreground/80"
-          />
+        <div className="flex items-center gap-3">
+          {UPLOAD_VIDEO_URL && (
+            <a
+              href={UPLOAD_VIDEO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="gap-2">
+                <Upload className="size-4" />
+                Upload Video
+              </Button>
+            </a>
+          )}
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search videos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-border bg-background pl-10 text-muted-foreground placeholder:text-muted-foreground/80"
+            />
+          </div>
         </div>
       </div>
 
@@ -77,28 +106,40 @@ export default function VideosPage() {
                         alt={video.title}
                         className="size-full object-cover"
                         onLoad={(e) => {
-                          const img = e.currentTarget
+                          const img = e.currentTarget;
                           if (img.naturalWidth < 200) {
                             if (img.src.includes('maxresdefault')) {
-                              img.src = img.src.replace('maxresdefault', 'hqdefault')
+                              img.src = img.src.replace(
+                                'maxresdefault',
+                                'hqdefault',
+                              );
                             } else {
-                              img.style.display = 'none'
-                              img.nextElementSibling?.classList.remove('hidden')
+                              img.style.display = 'none';
+                              img.nextElementSibling?.classList.remove(
+                                'hidden',
+                              );
                             }
                           }
                         }}
                         onError={(e) => {
-                          const img = e.currentTarget
+                          const img = e.currentTarget;
                           if (img.src.includes('maxresdefault')) {
-                            img.src = img.src.replace('maxresdefault', 'hqdefault')
+                            img.src = img.src.replace(
+                              'maxresdefault',
+                              'hqdefault',
+                            );
                           } else {
-                            img.style.display = 'none'
-                            img.nextElementSibling?.classList.remove('hidden')
+                            img.style.display = 'none';
+                            img.nextElementSibling?.classList.remove(
+                              'hidden',
+                            );
                           }
                         }}
                       />
                     ) : null}
-                    <Play className={`absolute inset-0 m-auto size-10 text-muted-foreground/60 transition-colors group-hover:text-primary/60 ${video.thumbnail ? 'hidden' : ''}`} />
+                    <Play
+                      className={`absolute inset-0 m-auto size-10 text-muted-foreground/60 transition-colors group-hover:text-primary/60 ${video.thumbnail ? 'hidden' : ''}`}
+                    />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20">
                       <div className="flex size-12 items-center justify-center rounded-full bg-primary/80 text-white opacity-0 shadow-lg transition-all group-hover:opacity-100 group-hover:scale-110">
                         <Play className="size-5 ml-0.5" />
@@ -118,23 +159,28 @@ export default function VideosPage() {
                       size="icon"
                       className="absolute right-2 top-2 z-10 text-white/70 hover:text-primary transition-colors"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        const isBookmarked = bookmarkedUrls.has(video.videoUrl)
+                        e.stopPropagation();
+                        const isBookmarked = bookmarkedUrls.has(
+                          video.videoUrl,
+                        );
                         if (isBookmarked) {
-                          const bookmark = bookmarksData?.bookmarks?.find((b) => b.videoUrl === video.videoUrl)
+                          const bookmark =
+                            bookmarksData?.bookmarks?.find(
+                              (b) => b.videoUrl === video.videoUrl,
+                            );
                           if (bookmark) {
-                            removeBookmark(bookmark._id)
-                            bookmarkedUrls.delete(video.videoUrl)
-                            toast.success("Removed from bookmarks")
+                            removeBookmark(bookmark._id);
+                            bookmarkedUrls.delete(video.videoUrl);
+                            toast.success('Removed from bookmarks');
                           }
                         } else {
                           addBookmark({
                             title: video.title,
                             videoUrl: video.videoUrl,
                             description: video.description,
-                          })
-                          bookmarkedUrls.add(video.videoUrl)
-                          toast.success("Added to bookmarks")
+                          });
+                          bookmarkedUrls.add(video.videoUrl);
+                          toast.success('Added to bookmarks');
                         }
                       }}
                     >
@@ -148,7 +194,9 @@ export default function VideosPage() {
                     </Button>
                   </div>
                   <div className="space-y-1.5 p-3">
-                    <p className="line-clamp-1 text-sm font-medium text-foreground">{video.title}</p>
+                    <p className="line-clamp-1 text-sm font-medium text-foreground">
+                      {video.title}
+                    </p>
                     <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/70">
                       {video.description}
                     </p>
@@ -166,8 +214,12 @@ export default function VideosPage() {
             {videos.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Play className="mb-4 size-12 text-muted-foreground/80" />
-                <p className="text-lg text-muted-foreground">No videos found</p>
-                <p className="mt-1 text-sm text-muted-foreground/80">Try a different search term</p>
+                <p className="text-lg text-muted-foreground">
+                  No videos found
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground/80">
+                  Try a different search term
+                </p>
               </div>
             )}
 
@@ -181,12 +233,19 @@ export default function VideosPage() {
                 >
                   Previous
                 </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                {Array.from(
+                  { length: totalPages },
+                  (_, i) => i + 1,
+                ).map((p) => (
                   <Button
                     key={p}
-                    variant={p === page ? "default" : "outline"}
+                    variant={p === page ? 'default' : 'outline'}
                     size="sm"
-                    className={p === page ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+                    className={
+                      p === page
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : ''
+                    }
                     onClick={() => setPage(p)}
                   >
                     {p}
@@ -196,7 +255,9 @@ export default function VideosPage() {
                   variant="outline"
                   size="sm"
                   disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setPage((p) => Math.min(totalPages, p + 1))
+                  }
                 >
                   Next
                 </Button>
@@ -206,5 +267,5 @@ export default function VideosPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
