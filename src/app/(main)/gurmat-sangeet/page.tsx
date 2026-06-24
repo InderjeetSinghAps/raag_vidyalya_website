@@ -2,22 +2,25 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Music2, Clock, Search, Loader2 } from 'lucide-react';
+import { Music2, Clock, Search, Loader2, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { playTrack, showMiniPlayer } from '@/store/playerSlice';
-import { useGetRaagsQuery } from '@/store/api';
+import { useGetRaagsQuery, useGetRaagAccessQuery } from '@/store/api';
 import type { RaagApiItem } from '@/types';
 
 export default function GurmatSangeetPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
 
   const { data, isLoading } = useGetRaagsQuery();
+  const { data: accessData } = useGetRaagAccessQuery(undefined, { skip: !isAuthenticated });
+  const unlockedSet = new Set(accessData?.raagAccess?.map((r) => r.raagNumber) ?? []);
 
   const filtered = (data?.raags ?? []).filter((r) => {
     return (
@@ -82,8 +85,12 @@ export default function GurmatSangeetPage() {
                 router.push(`/gurmat-sangeet/${raag._id}`)
               }
             >
-              <div className="flex h-32 items-center justify-center rounded-t-xl bg-background">
-                {/* <Music2 className="size-12 text-cyan-400/30" /> */}
+              <div className="relative flex h-32 items-center justify-center rounded-t-xl bg-background">
+                {raag.id > 2 && !unlockedSet.has(raag.id) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+                    <Lock className="size-8 text-amber-400/60" />
+                  </div>
+                )}
                 <img
                   src="/logo2.svg"
                   alt="logo"
@@ -91,9 +98,21 @@ export default function GurmatSangeetPage() {
                 />
               </div>
               <CardContent className="flex flex-1 flex-col gap-3">
-                <h3 className="text-lg font-bold text-foreground">
-                  {raag.name}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-foreground">
+                    {raag.name}
+                  </h3>
+                  {raag.id <= 2 ? (
+                    <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">Free</Badge>
+                  ) : unlockedSet.has(raag.id) ? (
+                    <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">Unlocked</Badge>
+                  ) : (
+                    <Badge className="border border-amber-500/20 bg-amber-500/10 text-[10px] font-medium text-amber-400">
+                      <Crown className="mr-1 size-3" />
+                      Premium
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
                     {raag.thaat}
@@ -113,13 +132,8 @@ export default function GurmatSangeetPage() {
                   <Button
                     variant="outline"
                     className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
-                    // onClick={(e) => {
-                    // e.stopPropagation();
-                    // handleListen(raag);
-                    // }}
                   >
-                    {/* Listen */}
-                    View Details
+                    {raag.id > 2 && !unlockedSet.has(raag.id) ? <><Lock className="mr-1.5 size-3" /> Premium</> : 'View Details'}
                   </Button>
                 </div>
               </CardContent>

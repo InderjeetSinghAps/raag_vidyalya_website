@@ -88,7 +88,7 @@ function ResetPasswordForm() {
         </GoldButton>
       </form>
 
-      <p className="text-center text-sm text-white/40">
+      <p className="text-center text-sm text-muted-foreground">
         <Link
           href="/login"
           className="font-semibold text-[#D4A44A] transition-colors hover:text-[#F5D485]"

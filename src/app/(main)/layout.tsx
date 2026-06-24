@@ -5,7 +5,7 @@ import { MiniPlayer } from "@/components/layout/MiniPlayer"
 import { CartSheet } from "@/components/layout/CartSheet"
 import { useAppSelector } from "@/store/hooks"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 const PROTECTED_ROUTES = [
   "/profile",
@@ -31,15 +31,32 @@ export default function MainLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const hasTrack = useAppSelector((state) => state.player.currentTrack !== null)
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth)
   const protected_ = isProtected(pathname)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && protected_) {
       router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`)
     }
   }, [isAuthenticated, isLoading, pathname, router, protected_])
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="space-y-3 w-64">
+          <div className="h-4 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-4/5 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-3/5 rounded bg-muted animate-pulse" />
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading && protected_) {
     return (

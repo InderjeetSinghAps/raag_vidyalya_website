@@ -26,10 +26,12 @@ import {
   Headphones,
   MessageCircle,
   Mail,
-  // Music,
   Eye,
   EyeOff,
   Loader2,
+  TriangleAlert,
+  Gift,
+
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -55,14 +57,16 @@ import {
 } from '@/components/ui/select';
 
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { updateUser } from '@/store/authSlice';
+import { logout, updateUser } from '@/store/authSlice';
 import { setLanguage, Language } from '@/store/languageSlice';
 import {
   useGetUserDetailQuery,
   useUpdateUserMutation,
+  useUploadFileMutation,
   useChangePasswordMutation,
   useSetPasswordMutation,
   useSubmitSuggestionMutation,
+  useDeleteAccountMutation,
   resolveImageUrl,
 } from '@/store/api';
 import { toast } from 'sonner';
@@ -134,6 +138,18 @@ const menuGroups: {
     ],
   },
   {
+    title: 'Referral',
+    icon: Gift,
+    items: [
+      {
+        label: 'My Referrals',
+        icon: Gift,
+        action: 'link',
+        value: '/referral',
+      },
+    ],
+  },
+  {
     title: 'Subscription & Wallet',
     icon: Wallet,
     items: [
@@ -183,6 +199,18 @@ const menuGroups: {
       { label: 'About', icon: User, action: 'link', value: '/about' },
     ],
   },
+  {
+    title: 'Danger Zone',
+    icon: TriangleAlert,
+    items: [
+      {
+        label: 'Delete Account',
+        icon: TriangleAlert,
+        action: 'modal',
+        value: 'deleteAccount',
+      },
+    ],
+  },
 ];
 
 // ── Modals ──
@@ -198,6 +226,7 @@ function EditProfileModal({
   const dispatch = useAppDispatch();
   const [updateUserApi, { isLoading: saving }] =
     useUpdateUserMutation();
+  const [uploadFile] = useUploadFileMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -212,6 +241,7 @@ function EditProfileModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     null,
   );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -222,6 +252,7 @@ function EditProfileModal({
     setPhoneValue(user?.phoneNumber || '');
     setCountryCode(user?.countryCode || '+91');
     setPhotoPreview(null);
+    setSelectedFile(null);
   }, [open, user]);
 
   const handlePhotoChange = (
@@ -229,6 +260,7 @@ function EditProfileModal({
   ) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (ev) =>
         setPhotoPreview(ev?.target?.result as string);
@@ -250,7 +282,12 @@ function EditProfileModal({
         payload.phoneNumber = phoneValue;
         payload.countryCode = countryCode;
       }
-      if (photoPreview) payload.profileImage = photoPreview;
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        const uploadRes = await uploadFile(formData).unwrap();
+        payload.profileImage = uploadRes.url;
+      }
 
       if (Object.keys(payload).length > 0) {
         await updateUserApi(payload).unwrap();
@@ -1046,6 +1083,91 @@ function ContactSupportModal({
   );
 }
 
+// ── Delete Account Modal ──
+
+function DeleteAccountModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const [deleteAccount, { isLoading }] = useDeleteAccountMutation();
+  const [confirmText, setConfirmText] = useState('');
+
+  const handleDelete = async () => {
+    try {
+      await deleteAccount().unwrap();
+      dispatch(logout());
+      toast.success('Account deleted successfully');
+      router.push('/');
+    } catch {
+      toast.error('Failed to delete account');
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className={glassDialog}>
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-red-500/10">
+              <TriangleAlert className="size-5 text-red-500" />
+            </div>
+            <div>
+              <DialogTitle className="text-foreground">Delete Account</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                This action is permanent and cannot be undone.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="mt-2 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            All your data including enrollments, bookmarks, and wallet will be permanently removed.
+          </p>
+
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+            <p className="text-xs font-medium text-red-500">Type <strong>delete my account</strong> to confirm:</p>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="delete my account"
+              className="mt-2 border-red-500/20 bg-red-500/5 focus:border-red-500/50 focus:ring-red-500/20 placeholder:text-red-500/30 text-sm"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 h-11 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={confirmText !== 'delete my account' || isLoading}
+              onClick={handleDelete}
+              className="flex-1 h-11 rounded-xl bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+            >
+              {isLoading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                'Delete My Account'
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Referral Modal ──
+
 // ── Main Page ──
 
 const cardClass =
@@ -1252,6 +1374,10 @@ export default function ProfilePage() {
       />
       <ContactSupportModal
         open={activeModal === 'contactSupport'}
+        onClose={closeModal}
+      />
+      <DeleteAccountModal
+        open={activeModal === 'deleteAccount'}
         onClose={closeModal}
       />
     </div>

@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
         </GoldButton>
       </form>
 
-      <p className="text-center text-sm text-white/40">
+      <p className="text-center text-sm text-muted-foreground">
         Remember your password?{" "}
         <Link
           href="/login"

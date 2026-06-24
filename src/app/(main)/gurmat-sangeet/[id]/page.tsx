@@ -1,12 +1,13 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Music2, Clock, Play, FileText, Loader2 } from "lucide-react"
+import { ArrowLeft, Music2, Clock, Play, FileText, Loader2, Lock, Crown } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAppDispatch } from "@/store/hooks"
 import { playTrack, showMiniPlayer } from "@/store/playerSlice"
-import { useGetRaagsQuery } from "@/store/api"
+import { useGetRaagsQuery, useGetSingleRaagAccessQuery } from "@/store/api"
 
 export default function RaagDetailPage() {
   const params = useParams()
@@ -15,6 +16,8 @@ export default function RaagDetailPage() {
 
   const { data, isLoading } = useGetRaagsQuery()
   const raag = (data?.raags ?? []).find((r) => r._id === params.id)
+
+  const { data: accessData } = useGetSingleRaagAccessQuery(raag?.id ?? 0, { skip: !raag })
 
   if (isLoading) {
     return (
@@ -85,6 +88,32 @@ export default function RaagDetailPage() {
         </div>
         <div className="flex flex-1 flex-col justify-center gap-3">
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{raag.name}</h1>
+          {accessData && (
+            <div className="flex flex-wrap items-center gap-2">
+              {accessData.hasAccess && (
+                <Badge className="border border-green-500/20 bg-green-500/10 text-xs font-medium text-green-400">
+                  <Crown className="mr-1 size-3" />
+                  Premium
+                </Badge>
+              )}
+              {!accessData.hasAccess && !accessData.isFree && (
+                <>
+                  <Badge className="border border-amber-500/20 bg-amber-500/10 text-xs font-medium text-amber-400">
+                    <Lock className="mr-1 size-3" />
+                    Premium
+                  </Badge>
+                  <Link href="/subscription" className="text-xs font-medium text-amber-400 hover:text-amber-300 underline">
+                    <Lock className="mr-1 size-3" /> Premium
+                  </Link>
+                </>
+              )}
+              {accessData.isFree && (
+                <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-xs font-medium text-cyan-400">
+                  Free
+                </Badge>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-xs font-medium text-cyan-400">
               {raag.thaat}

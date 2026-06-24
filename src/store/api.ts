@@ -452,6 +452,7 @@ function extractAuthResponse(
 
   const user = tryGet([
     ['user'],
+    ['data'],
     ['data', 'user'],
   ]) as User | undefined
 
@@ -549,7 +550,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User', 'Product', 'Video', 'Course', 'Gurbani', 'Raag', 'Enrollment', 'Bookmark', 'Collaborator'],
+  tagTypes: ['User', 'Product', 'Video', 'Course', 'Gurbani', 'Raag', 'Enrollment', 'Bookmark', 'Collaborator', 'Referral'],
   endpoints: (builder) => ({
     login: builder.mutation<
       { user: User; token: string; refreshToken: string },
@@ -575,29 +576,40 @@ export const api = createApi({
   },
     }),
 
-signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { name: string; email: string; password: string }>({
+signup: builder.mutation<
+  { success: boolean; message: string; email: string },
+  {
+    email: string
+    password: string
+    userName: string
+    deviceType: number
+    deviceToken: string
+    deviceId: string
+    referralCode?: string
+    phoneNumber?: string
+    countryCode?: string
+    language?: string
+  }
+>({
   query: (body) => ({
-    url: '/user/user-signup',
+    url: '/user/user-register',
     method: 'POST',
-    body,
+    body: { ...body, age: 0 },
   }),
-  transformResponse: (response) => {
-    const result = extractAuthResponse(response as Record<string, unknown>)
-    if (!result) throw new Error('Signup response missing token or user')
-    return result
-  },
-  async onQueryStarted(_, { dispatch, queryFulfilled }) {
-    try {
-      const { data } = await queryFulfilled
-      dispatch(setUser({ user: data.user, token: data.token, refreshToken: data.refreshToken, rememberMe: true }))
-    } catch {
-      /* error handled by caller */
-    }
-  },
 }),
 
     verifyOtp: builder.mutation<
-      { user: User; token: string; refreshToken: string },
+      {
+        user: User
+        token: string
+        refreshToken: string
+        referralCode?: string
+        raagUnlockedForReferrer?: {
+          raagUnlocked: boolean
+          raagNumber: number
+          expiresAt: string
+        }
+      },
       { email: string; otp: string; type?: 1 | 2 }
     >({
       query: ({ email, otp, type = 1 }) => ({
@@ -606,9 +618,16 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
         body: { email, otp, type },
       }),
       transformResponse: (response) => {
-        const result = extractAuthResponse(response as Record<string, unknown>)
+        const raw = response as Record<string, unknown>
+        const result = extractAuthResponse(raw)
         if (!result) throw new Error('Verify OTP response missing token or user')
-        return result
+        return {
+          ...result,
+          referralCode: raw.referralCode as string | undefined,
+          raagUnlockedForReferrer: raw.raagUnlockedForReferrer as
+            | { raagUnlocked: boolean; raagNumber: number; expiresAt: string }
+            | undefined,
+        }
       },
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
@@ -895,10 +914,9 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
       query: (body) => ({
         url: '/course-video-bookmarks',
         method: 'POST',
-        body,
-      }),
-      invalidatesTags: ['Bookmark'],
-    }),
+    body,
+  }),
+  }),
     removeCourseVideoBookmark: builder.mutation<void, string>({
       query: (id) => ({
         url: `/course-video-bookmarks/${id}`,
@@ -964,6 +982,18 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
       providesTags: ['Collaborator'],
     }),
 
+    deleteAccount: builder.mutation<void, void>({
+      query: () => ({
+        url: '/user/delete-account',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    getPreviousResults: builder.query<import('@/types').PreviousResultsApiResponse, void>({
+      query: () => '/previous-result',
+    }),
+
     getCollaboratorById: builder.query<import('@/types').Collaborator, string>({
       query: (id) => `/collaborator/get/${id}`,
       transformResponse: (response: { success: boolean; message: string; collaborator: import('@/types').Collaborator }) => ({
@@ -972,6 +1002,55 @@ signup: builder.mutation<{ user: User; token: string; refreshToken: string }, { 
         coverProfile: response.collaborator.coverProfile ? resolveImageUrl(response.collaborator.coverProfile) : undefined,
       }),
       providesTags: (_result, _error, id) => [{ type: 'Collaborator', id }],
+    }),
+
+    uploadFile: builder.mutation<{ success: boolean; message: string; url: string }, FormData>({
+      query: (body) => ({
+        url: '/file-upload',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    checkDevice: builder.mutation<import('@/types').CheckDeviceResponse, { deviceId: string }>({
+      query: ({ deviceId }) => ({
+        url: '/referral/check-device',
+        method: 'POST',
+        body: { deviceId },
+      }),
+    }),
+
+    getMyReferralCode: builder.query<import('@/types').ReferralCodeResponse, void>({
+      query: () => '/referral/my-code',
+      providesTags: ['Referral'],
+    }),
+
+    getReferralHistory: builder.query<
+      import('@/types').ReferralHistoryResponse,
+      { page?: number; limit?: number }
+    >({
+      query: ({ page = 1, limit = 20 }) => ({
+        url: '/referral/history',
+        params: { page, limit },
+      }),
+      transformResponse: (response: import('@/types').ReferralHistoryResponse) => ({
+        ...response,
+        referrals: response.referrals.map((r: unknown) => {
+          const ref = r as { status?: number }
+          return { ...ref, status: ref.status === 1 ? 'pending' : ref.status === 2 ? 'successful' : 'failed' }
+        }),
+      }),
+      providesTags: ['Referral'],
+    }),
+
+    getRaagAccess: builder.query<import('@/types').RaagAccessResponse, void>({
+      query: () => '/referral/raag-access',
+      providesTags: ['Referral'],
+    }),
+
+    getSingleRaagAccess: builder.query<import('@/types').SingleRaagAccessResponse, number>({
+      query: (raagNumber) => `/referral/raag-access/${raagNumber}`,
+      providesTags: (_result, _error, raagNumber) => [{ type: 'Referral', id: raagNumber }],
     }),
 
   }),
@@ -1005,5 +1084,13 @@ export const {
   useEnrollCourseMutation,
   useGetTransactionHistoryQuery,
   useGetCollaboratorsQuery,
+  useDeleteAccountMutation,
+  useUploadFileMutation,
+  useGetPreviousResultsQuery,
   useGetCollaboratorByIdQuery,
+  useCheckDeviceMutation,
+  useGetMyReferralCodeQuery,
+  useGetReferralHistoryQuery,
+  useGetRaagAccessQuery,
+  useGetSingleRaagAccessQuery,
 } = api

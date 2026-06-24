@@ -58,7 +58,13 @@ function VerifyOtpForm() {
       return
     }
     try {
-      await verifyOtp({ email, otp: code, type: otpType }).unwrap()
+      const res = await verifyOtp({ email, otp: code, type: otpType }).unwrap()
+      if (res.raagUnlockedForReferrer?.raagUnlocked) {
+        toast.success(`Raag ${res.raagUnlockedForReferrer.raagNumber} unlocked! Valid until ${new Date(res.raagUnlockedForReferrer.expiresAt).toLocaleDateString()}.`)
+      }
+      if (res.referralCode) {
+        toast.success(`Your referral code: ${res.referralCode}`)
+      }
       if (otpType === 2) {
         router.push(`/reset-password?email=${encodeURIComponent(email)}`)
       } else {
@@ -76,7 +82,7 @@ function VerifyOtpForm() {
         subtitle={
           <>
             Enter the 6-digit code sent to{" "}
-            <span className="text-white/60">{email || "your email"}</span>
+            <span className="text-muted-foreground">{email || "your email"}</span>
           </>
         }
       />
@@ -97,7 +103,7 @@ function VerifyOtpForm() {
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={index === 0 ? handlePaste : undefined}
-              className="h-14 w-11 rounded-xl border border-white/[0.08] bg-white/[0.06] text-center text-lg font-semibold text-white outline-none transition-all duration-200 focus:border-[#D4A44A]/50 focus:ring-2 focus:ring-[#D4A44A]/10"
+              className="h-14 w-11 rounded-xl border border-border bg-muted text-center text-lg font-semibold text-foreground outline-none transition-all duration-200 focus:border-[#D4A44A]/50 focus:ring-2 focus:ring-[#D4A44A]/10"
             />
           ))}
         </div>
@@ -111,7 +117,7 @@ function VerifyOtpForm() {
         </GoldButton>
       </form>
 
-      <p className="text-center text-sm text-white/40">
+      <p className="text-center text-sm text-muted-foreground">
         <Link
           href="/login"
           className="font-semibold text-[#D4A44A] transition-colors hover:text-[#F5D485]"

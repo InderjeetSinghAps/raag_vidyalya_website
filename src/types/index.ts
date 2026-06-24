@@ -199,6 +199,84 @@ export interface Section {
   content: ContentItem[];
 }
 
+export interface PreviousResult {
+  _id: string
+  title: string
+  description: string
+  videoUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PreviousResultsApiResponse {
+  success: boolean
+  message: string
+  previousResults: PreviousResult[]
+  total: number
+  page: number
+  totalPages: number
+}
+
+export interface CheckDeviceResponse {
+  success: boolean
+  deviceUsed: boolean
+  message: string
+}
+
+export interface ReferralCodeResponse {
+  success: boolean
+  message: string
+  referralCode: string
+  referralCodeGeneratedAt: string
+  shareText: string
+}
+
+export interface ReferralHistoryStats {
+  total: number
+  successful: number
+  pending: number
+  failed: number
+  raagUnlockCount: number
+  referralsToNextUnlock: number
+  nextRaagNumber: number
+  allRaagsUnlocked: boolean
+}
+
+export interface ReferralHistoryResponse {
+  success: boolean
+  message: string
+  referrals: unknown[]
+  total: number
+  page: number
+  totalPages: number
+  stats: ReferralHistoryStats
+}
+
+export interface RaagAccessItem {
+  raagNumber: number
+  raagName?: string
+  isUnlocked?: boolean
+  unlockedAt?: string | null
+  expiresAt?: string | null
+}
+
+export interface RaagAccessResponse {
+  success: boolean
+  message: string
+  raagAccess: RaagAccessItem[]
+  totalActiveUnlocks: number
+}
+
+export interface SingleRaagAccessResponse {
+  success: boolean
+  message: string
+  hasAccess: boolean
+  raagNumber: number
+  unlockedAt: string | null
+  expiresAt: string | null
+  isFree: boolean
+}
+
 export interface Collaborator {
   _id: string;
   name: string;

@@ -19,6 +19,8 @@ import {
   GraduationCap,
   TrendingUp,
   Music2,
+  Lock,
+  Gift,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -32,7 +34,7 @@ import {
 } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { playTrack } from '@/store/playerSlice';
 import {
   getGoogleDriveAudioUrl,
@@ -45,6 +47,8 @@ import {
   useGetGurbaniCollectionsQuery,
   useGetRaagsQuery,
   useGetCollaboratorsQuery,
+  useGetPreviousResultsQuery,
+  useGetRaagAccessQuery,
 } from '@/store/api';
 import type {
   RaagApiItem,
@@ -155,6 +159,70 @@ const appLinks = [
   },
 ];
 
+function PreviousResultSection() {
+  const router = useRouter();
+  const { data, isLoading } = useGetPreviousResultsQuery();
+  const result = data?.previousResults?.[0];
+  if (!result || isLoading) return null;
+
+  const videoId = getYouTubeVideoId(result.videoUrl);
+
+  return (
+    <section className={sectionHeading}>
+      <div className="mx-auto max-w-7xl">
+        <div className="flex items-center justify-between">
+          <SectionHeader
+            title="Contest Results"
+            subtitle="Watch the latest contest performance"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-primary transition-all duration-200 active:scale-[0.96]"
+            onClick={() => router.push('/contests/previous-results')}
+          >
+            View All
+          </Button>
+        </div>
+        <div className="mt-6 flex pb-6 pt-2">
+          <div
+            onClick={() => {
+              if (videoId) {
+                window.open(result.videoUrl, '_blank');
+              }
+            }}
+            className="group w-full max-w-lg cursor-pointer overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+          >
+            <div className="relative flex h-48 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-primary/20 to-primary/5">
+              {videoId ? (
+                <img
+                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                  alt={result.title}
+                  className="absolute inset-0 size-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                  }}
+                />
+              ) : null}
+              <div className="relative flex size-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                <Play className="size-8 text-white/80" />
+              </div>
+            </div>
+            <div className="space-y-2 p-4">
+              <h3 className="font-semibold text-foreground">{result.title}</h3>
+              {result.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {result.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CollaboratorsSection() {
   const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
@@ -167,7 +235,7 @@ function CollaboratorsSection() {
           title="Our Collaborators"
           subtitle="Meet the people behind Raag Vidyalya"
         />
-        <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+        <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {collaborators.map((c: Collaborator) => (
             <a
               key={c._id}
@@ -362,6 +430,9 @@ export default function HomePage() {
   };
   const { data: raagsData } = useGetRaagsQuery();
   const apiRaags = raagsData?.raags ?? [];
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const { data: accessData } = useGetRaagAccessQuery(undefined, { skip: !isAuthenticated });
+  const unlockedSet = new Set(accessData?.raagAccess?.map((r) => r.raagNumber) ?? []);
 
   const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
@@ -396,7 +467,15 @@ export default function HomePage() {
             priority
           />
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 md:hidden"
+            style={{
+              background: isLightTheme
+                ? 'linear-gradient(180deg, #ffffff 0%, #ffffff 60%, transparent 80%, transparent 100%)'
+                : 'linear-gradient(180deg, #06111d 0%, #06111d 60%, transparent 80%, transparent 100%)',
+            }}
+          />
+          <div
+            className="absolute inset-0 hidden md:block"
             style={{
               background: isLightTheme
                 ? 'linear-gradient(90deg, #ffffff 0%, #ffffff 30%, transparent 60%, transparent 100%)'
@@ -408,7 +487,7 @@ export default function HomePage() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          className="relative z-10 mx-auto flex max-w-[1400px] items-center py-16 lg:py-20"
+          className="relative z-10 mx-auto flex max-w-[1400px] items-center py-10 md:py-16 lg:py-20"
         >
           <div className="max-w-[800px]">
             <motion.h1
@@ -504,7 +583,7 @@ export default function HomePage() {
               title="Featured Live Kirtan"
               subtitle="Live from Darbar Sahib, Golden Temple, Amritsar"
             />
-            <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+            <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <Card
                 className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
                 onClick={() => router.push('/live')}
@@ -569,13 +648,15 @@ export default function HomePage() {
         </section>
 )}
 
+      <PreviousResultSection />
+
       <section className={sectionHeading}>
         <div className="mx-auto max-w-7xl">
           <SectionHeader
             title="Featured Courses"
             subtitle="Start your journey with our top courses"
           />
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {courses.slice(0, 4).map((course) => {
               const state =
                 courseThumbStates[course.id] || 'maxresdefault';
@@ -666,16 +747,24 @@ export default function HomePage() {
             className="mt-6 w-full"
           >
             <CarouselContent className="-ml-4">
-              {apiRaags.slice(0, 8).map((raag: RaagApiItem) => (
+              {apiRaags.slice(0, 8).map((raag: RaagApiItem) => {
+                const isFree = raag.id <= 2
+                const isUnlocked = unlockedSet.has(raag.id)
+                return (
                 <CarouselItem
                   key={raag._id}
                   onClick={() =>
                     router.push(`/gurmat-sangeet/${raag._id}`)
                   }
-                  className="basis-auto pl-4"
+                  className="basis-[65%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
                 >
-                  <div className="flex h-full w-56 flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
-                    <div className="flex h-28 shrink-0 items-center justify-center rounded-lg ">
+                  <div className="flex h-full flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
+                    <div className="relative flex h-28 shrink-0 items-center justify-center rounded-lg">
+                      {!isFree && !isUnlocked && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px] rounded-lg z-10">
+                          <Lock className="size-7 text-amber-400/60" />
+                        </div>
+                      )}
                       <img
                         src="/logo2.svg"
                         alt="logo"
@@ -683,9 +772,23 @@ export default function HomePage() {
                       />
                     </div>
                     <div className="mt-3 flex-1 space-y-1">
-                      <h3 className="font-semibold text-foreground">
-                        {raag.name}
-                      </h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-foreground">
+                          {raag.name}
+                        </h3>
+                        {isFree && (
+                          <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">Free</Badge>
+                        )}
+                        {isUnlocked && (
+                          <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">Unlocked</Badge>
+                        )}
+                        {!isFree && !isUnlocked && (
+                          <Badge className="border border-amber-500/20 bg-amber-500/10 text-[10px] font-medium text-amber-400">
+                            <Gift className="mr-1 size-3" />
+                            Refer
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Thaat: {raag.thaat}
                       </p>
@@ -702,14 +805,15 @@ export default function HomePage() {
                       size="sm"
                       className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
                     >
-                      View Details
+                      {!isFree && !isUnlocked ? <><Lock className="mr-1.5 size-3" /> Premium</> : 'View Details'}
                     </Button>
                   </div>
                 </CarouselItem>
-              ))}
+                )
+              })}
             </CarouselContent>
-            <CarouselPrevious className="rounded-full border-border text-muted-foreground hover:text-foreground" />
-            <CarouselNext className="rounded-full border-border text-muted-foreground hover:text-foreground" />
+            <CarouselPrevious className="hidden sm:inline-flex rounded-full border-border text-muted-foreground hover:text-foreground" />
+            <CarouselNext className="hidden sm:inline-flex rounded-full border-border text-muted-foreground hover:text-foreground" />
           </Carousel>
         </div>
       </section>
@@ -829,7 +933,7 @@ export default function HomePage() {
               View All
             </Button>
           </div>
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2">
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {storeProducts.slice(0, 5).map((product) => (
               <StoreCard key={product.id} product={product} />
             ))}
