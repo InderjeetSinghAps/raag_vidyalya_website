@@ -42,6 +42,7 @@ import {
   getYouTubeVideoId,
 } from '@/lib/video';
 import { LIVE_AMRITSAR_KIRTAN_URL } from '@/lib/constants';
+import { DarbarSahibCard } from '@/components/DarbarSahibCard';
 import {
   useGetCoursesQuery,
   useGetProductsQuery,
@@ -227,7 +228,19 @@ function PreviousResultSection() {
 function CollaboratorsSection() {
   const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
-  if (collaborators.length === 0) return null;
+  if (collaborators.length === 0) {
+    return (
+      <section className={sectionHeading}>
+        <div className="mx-auto max-w-7xl">
+          <SectionHeader
+            title="Our Collaborators"
+            subtitle="Meet the people behind Raag Vidyalya"
+          />
+          <DarbarSahibCard />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={sectionHeading}>
@@ -457,7 +470,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-background">
+    <div className="bg-background relative">
+      <div className="pointer-events-none fixed inset-0 flex select-none items-center justify-center">
+        <span className="leading-none text-white/[0.015] text-[min(50vw,350px)]">ੴ</span>
+      </div>
       <section className="relative min-h-[calc(100vh-72px)] overflow-hidden px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0">
           <Image

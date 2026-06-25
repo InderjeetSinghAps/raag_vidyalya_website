@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Music2, Play, Sparkles, TrendingUp, Clock, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -26,6 +27,7 @@ export default function RiyazPage() {
         }}
       >
         <div className="pointer-events-none absolute -top-20 right-0 size-[300px] rounded-full bg-[rgba(212,160,23,.08)] blur-[80px]" />
+        <Image src="/logo.jpeg" alt="" fill className="pointer-events-none select-none object-contain opacity-[0.04]" priority />
         <div className="relative z-10">
           <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-[rgba(212,160,23,.15)] shadow-[0_0_20px_rgba(212,160,23,.2)]">
             <Music2 className="size-6 text-amber-400" />

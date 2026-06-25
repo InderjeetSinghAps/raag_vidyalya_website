@@ -462,6 +462,11 @@ function extractAuthResponse(
     user.name = user.userName
   }
 
+  const rawUser = user as unknown as Record<string, unknown>
+  if (!user.id && rawUser._id) {
+    rawUser.id = rawUser._id as string
+  }
+
   const { access_token, refresh_token, ...cleanUser } = user as User & { access_token?: string; refresh_token?: string }
   return { user: cleanUser, token, refreshToken: refreshToken || '' }
 }
@@ -494,6 +499,23 @@ const rawBaseQuery = fetchBaseQuery({
     return headers
   },
 })
+
+const PROTECTED_API_ROUTES = [
+  '/profile',
+  '/wallet',
+  '/courses/my-courses',
+  '/courses/bookmarks',
+  '/courses/bookmarks/[id]',
+  '/courses/[id]',
+  '/courses/[id]/lecture/[videoId]',
+]
+
+function isProtectedRoute(pathname: string) {
+  return PROTECTED_API_ROUTES.some((route) => {
+    const regex = new RegExp('^' + route.replace(/\[.*?\]/g, '[^/]+') + '$')
+    return regex.test(pathname)
+  })
+}
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
@@ -541,7 +563,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       localStorage.removeItem(STORAGE_KEY)
       sessionStorage.removeItem(STORAGE_KEY)
       api.dispatch(logout())
-      window.location.replace('/login?redirectTo=' + encodeURIComponent(window.location.pathname))
+      const currentPath = window.location.pathname
+      if (isProtectedRoute(currentPath)) {
+        window.location.replace('/login?redirectTo=' + encodeURIComponent(currentPath))
+      }
     }
   }
   return result

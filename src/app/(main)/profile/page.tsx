@@ -31,6 +31,9 @@ import {
   Loader2,
   TriangleAlert,
   Gift,
+  LogOut,
+  Settings,
+  Trash2,
 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -67,6 +70,7 @@ import {
   useSetPasswordMutation,
   useSubmitSuggestionMutation,
   useDeleteAccountMutation,
+  useLogoutMutation,
   resolveImageUrl,
 } from '@/store/api';
 import { toast } from 'sonner';
@@ -85,7 +89,7 @@ const goldButtonClass =
 type MenuItem = {
   label: string;
   icon: React.ElementType;
-  action: 'modal' | 'link' | 'toast';
+  action: 'modal' | 'link' | 'toast' | 'logout';
   value: string;
 };
 
@@ -200,14 +204,20 @@ const menuGroups: {
     ],
   },
   {
-    title: 'Danger Zone',
-    icon: TriangleAlert,
+    title: 'Account Management',
+    icon: Settings,
     items: [
       {
         label: 'Delete Account',
-        icon: TriangleAlert,
+        icon: Trash2,
         action: 'modal',
         value: 'deleteAccount',
+      },
+      {
+        label: 'Logout',
+        icon: LogOut,
+        action: 'modal',
+        value: 'logout',
       },
     ],
   },
@@ -1166,6 +1176,8 @@ function DeleteAccountModal({
   );
 }
 
+import { LogoutModal } from '@/components/auth/LogoutModal';
+
 // ── Referral Modal ──
 
 // ── Main Page ──
@@ -1196,6 +1208,16 @@ export default function ProfilePage() {
   }, []);
 
   const { data: serverUser } = useGetUserDetailQuery();
+  const [logoutApi, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  const handleProfileLogout = async () => {
+    try {
+      await logoutApi().unwrap();
+    } catch {
+    }
+    dispatch(logout());
+    router.push('/home');
+  };
 
   useEffect(() => {
     if (serverUser) {
@@ -1208,6 +1230,9 @@ export default function ProfilePage() {
       router.push(item.value);
     } else if (item.action === 'modal') {
       setActiveModal(item.value);
+    } else if (item.action === 'logout') {
+      dispatch(logout())
+      router.push('/')
     } else {
       toast.info(item.value);
     }
@@ -1379,6 +1404,15 @@ export default function ProfilePage() {
       <DeleteAccountModal
         open={activeModal === 'deleteAccount'}
         onClose={closeModal}
+      />
+      <LogoutModal
+        open={activeModal === 'logout'}
+        onOpenChange={(v) => {
+          if (!v) closeModal()
+        }}
+        user={user}
+        isLoggingOut={isLoggingOut}
+        onLogout={handleProfileLogout}
       />
     </div>
   );
