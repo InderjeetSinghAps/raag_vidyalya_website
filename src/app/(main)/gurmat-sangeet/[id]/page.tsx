@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Music2, Clock, Play, FileText, Loader2, Lock, Crown } from "lucide-react"
+import { ArrowLeft, Music2, Clock, ChevronRight, Loader2, Lock, Crown } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -57,21 +57,6 @@ export default function RaagDetailPage() {
     dispatch(showMiniPlayer())
   }
 
-  const handlePlayBandish = (audioUrl: string | null, name: string) => {
-    if (!audioUrl) return
-    dispatch(
-      playTrack({
-        id: raag._id,
-        title: name,
-        artist: "",
-        audioUrl,
-        image: "",
-        duration: "",
-      })
-    )
-    dispatch(showMiniPlayer())
-  }
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <button
@@ -98,9 +83,8 @@ export default function RaagDetailPage() {
               )}
               {!accessData.hasAccess && !accessData.isFree && (
                 <>
-                  <Badge className="border border-amber-500/20 bg-amber-500/10 text-xs font-medium text-amber-400">
-                    <Lock className="mr-1 size-3" />
-                    Premium
+                  <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                    <Crown className="size-3" />
                   </Badge>
                   <Link href="/subscription" className="text-xs font-medium text-amber-400 hover:text-amber-300 underline">
                     <Lock className="mr-1 size-3" /> Premium
@@ -182,30 +166,15 @@ export default function RaagDetailPage() {
                   <Music2 className="size-5 text-cyan-400/50" />
                   <span className="text-sm text-muted-foreground">{bandish.bandishName}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {bandish.pdfUrl && (
-                    <a
-                      href={bandish.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <FileText className="size-3.5" />
-                      PDF
-                    </a>
-                  )}
-                  {bandish.audioUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-cyan-400 hover:bg-cyan-500/10"
-                      onClick={() => handlePlayBandish(bandish.audioUrl, bandish.bandishName)}
-                    >
-                      <Play className="size-3.5" />
-                      Play
-                    </Button>
-                  )}
-                </div>
+                <button
+                  onClick={() =>
+                    router.push(`/gurmat-sangeet/${raag._id}/bandish/${bandish.sId}`)
+                  }
+                  className="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  View
+                  <ChevronRight className="size-4" />
+                </button>
               </div>
             ))}
           </div>
@@ -216,10 +185,10 @@ export default function RaagDetailPage() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             variant="default"
-            className="bg-cyan-500 text-foreground hover:bg-cyan-400"
+            className="gap-2 bg-cyan-500 text-foreground hover:bg-cyan-400"
             onClick={handlePlay}
           >
-            <Play className="size-4" />
+            <Music2 className="size-4" />
             Play Raag Recording
           </Button>
         </div>

@@ -29,7 +29,7 @@ export function getGoogleDriveDirectUrl(url: string): string {
   const match = url.match(/\/file\/d\/([^/]+)/)
   const id = match?.[1]
   if (!id) return url
-  return `https://lh3.googleusercontent.com/d/${id}=w800`
+  return `/api/image/${id}`
 }
 
 export function getGoogleDriveAudioUrl(url: string): string {
@@ -39,8 +39,7 @@ export function getGoogleDriveAudioUrl(url: string): string {
     url.match(/\/uc\?id=([^&]+)/)
   const id = idMatch?.[1]
   if (!id) return url
-  const driveUrl = `https://drive.google.com/uc?export=download&id=${id}`
-  return `/api/proxy-audio?url=${encodeURIComponent(driveUrl)}`
+  return `/api/audio/${id}`
 }
 
 export function getYouTubeEmbedUrl(url: string): string | null {

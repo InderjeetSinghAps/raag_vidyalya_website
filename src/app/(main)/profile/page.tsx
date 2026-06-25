@@ -162,8 +162,8 @@ const menuGroups: {
       {
         label: 'Subscription',
         icon: CreditCard,
-        action: 'toast',
-        value: 'Subscription coming soon!',
+        action: 'link',
+        value: '/subscription',
       },
     ],
   },

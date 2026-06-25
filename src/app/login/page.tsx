@@ -25,6 +25,7 @@ import {
   useSocialLoginMutation,
 } from '@/store/api';
 import { getFirebaseApp } from '@/lib/firebase';
+import { initRevenueCat } from '@/lib/revenuecat';
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -52,13 +53,16 @@ function LoginForm() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      await login({
+      const res = await login({
         email: data.email,
         password: data.password,
         rememberMe,
-      }).unwrap();
-      toast.success('Welcome back!');
-      router.push(redirectTo);
+      }).unwrap()
+      if (res.user) {
+        await initRevenueCat(res.user.id)
+        toast.success('Welcome back!');
+        router.push(redirectTo);
+      }
     } catch (error: unknown) {
       const msg =
         (error as { data?: { message?: string } })?.data?.message ||
@@ -79,7 +83,7 @@ function LoginForm() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      await socialLogin({
+      const socialRes = await socialLogin({
         email: user.email ?? '',
         provider: 'google',
         providerId: user.uid,
@@ -87,6 +91,7 @@ function LoginForm() {
         profileImage: user.photoURL ?? undefined,
       }).unwrap();
 
+      await initRevenueCat(socialRes.user.id)
       toast.success('Welcome back!');
       router.push(redirectTo);
     } catch (error: unknown) {

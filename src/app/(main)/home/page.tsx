@@ -21,6 +21,7 @@ import {
   Music2,
   Lock,
   Gift,
+  Crown,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -780,12 +781,14 @@ export default function HomePage() {
                           <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">Free</Badge>
                         )}
                         {isUnlocked && (
-                          <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">Unlocked</Badge>
+                          <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">
+                            <Crown className="mr-0.5 size-3" />
+                            Premium
+                          </Badge>
                         )}
                         {!isFree && !isUnlocked && (
-                          <Badge className="border border-amber-500/20 bg-amber-500/10 text-[10px] font-medium text-amber-400">
-                            <Gift className="mr-1 size-3" />
-                            Refer
+                          <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                            <Crown className="size-3" />
                           </Badge>
                         )}
                       </div>

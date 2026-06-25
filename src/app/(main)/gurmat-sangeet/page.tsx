@@ -2,7 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Music2, Clock, Search, Loader2, Lock, Crown } from 'lucide-react';
+import {
+  Music2,
+  Clock,
+  Search,
+  Loader2,
+  Lock,
+  Crown,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,11 +23,17 @@ export default function GurmatSangeetPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
-  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const isAuthenticated = useAppSelector(
+    (s) => s.auth.isAuthenticated,
+  );
 
   const { data, isLoading } = useGetRaagsQuery();
-  const { data: accessData } = useGetRaagAccessQuery(undefined, { skip: !isAuthenticated });
-  const unlockedSet = new Set(accessData?.raagAccess?.map((r) => r.raagNumber) ?? []);
+  const { data: accessData } = useGetRaagAccessQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const unlockedSet = new Set(
+    accessData?.raagAccess?.map((r) => r.raagNumber) ?? [],
+  );
 
   const filtered = (data?.raags ?? []).filter((r) => {
     return (
@@ -82,7 +95,11 @@ export default function GurmatSangeetPage() {
               key={raag._id}
               className="flex cursor-pointer flex-col border-border bg-background transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)]"
               onClick={() =>
-                router.push(`/gurmat-sangeet/${raag._id}`)
+                router.push(
+                  raag.id > 2 && !unlockedSet.has(raag.id)
+                    ? '/subscription'
+                    : `/gurmat-sangeet/${raag._id}`,
+                )
               }
             >
               <div className="relative flex h-32 items-center justify-center rounded-t-xl bg-background">
@@ -103,13 +120,18 @@ export default function GurmatSangeetPage() {
                     {raag.name}
                   </h3>
                   {raag.id <= 2 ? (
-                    <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">Free</Badge>
+                    <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
+                      Free
+                    </Badge>
                   ) : unlockedSet.has(raag.id) ? (
-                    <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">Unlocked</Badge>
+                    // <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">
+                    //   <Crown className="mr-1 size-3" />
+                    //   Premium
+                    // </Badge>
+                    <></>
                   ) : (
-                    <Badge className="border border-amber-500/20 bg-amber-500/10 text-[10px] font-medium text-amber-400">
-                      <Crown className="mr-1 size-3" />
-                      Premium
+                    <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                      <Crown className="size-3" />
                     </Badge>
                   )}
                 </div>
@@ -133,7 +155,13 @@ export default function GurmatSangeetPage() {
                     variant="outline"
                     className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 active:scale-[0.96]"
                   >
-                    {raag.id > 2 && !unlockedSet.has(raag.id) ? <><Lock className="mr-1.5 size-3" /> Premium</> : 'View Details'}
+                    {raag.id > 2 && !unlockedSet.has(raag.id) ? (
+                      <>
+                        <Lock className="mr-1.5 size-3" /> Premium
+                      </>
+                    ) : (
+                      'View Details'
+                    )}
                   </Button>
                 </div>
               </CardContent>
