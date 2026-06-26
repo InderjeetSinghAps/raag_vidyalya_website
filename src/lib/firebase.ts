@@ -10,12 +10,6 @@ const CONFIG_CACHE_KEY = 'firebase_config'
 let app: FirebaseApp | null = null
 let initPromise: Promise<FirebaseApp> | null = null
 
-async function fetchConfigFromServer(): Promise<Record<string, string | undefined>> {
-  const res = await fetch('/api/firebase-config')
-  if (!res.ok) throw new Error('Failed to fetch Firebase config')
-  return res.json()
-}
-
 function getCachedConfig(): Record<string, string | undefined> | null {
   try {
     const raw = localStorage.getItem(CONFIG_CACHE_KEY)
@@ -41,7 +35,15 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
 
     let config = getCachedConfig()
     if (!config) {
-      config = await fetchConfigFromServer()
+      config = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      }
       setCachedConfig(config)
     }
 

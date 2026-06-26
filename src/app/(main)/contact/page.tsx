@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { motion } from "framer-motion"
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Phone,
   Mail,
@@ -11,36 +11,39 @@ import {
   Camera,
   Play,
   Send,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
-import { contactInfo, socialLinks } from "@/data/contact"
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { StaticMap } from '@/components/google-maps/static-map';
+import { contactInfo, socialLinks } from '@/data/contact';
 
 const socialIcons: Record<string, React.ElementType> = {
   // "play-store": Smartphone,
   // "app-store": ExternalLink,
   instagram: Camera,
   youtube: Play,
-}
+};
 
 export default function ContactPage() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [message, setMessage] = useState("")
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!name || !email || !message) {
-      toast.error("Please fill in all fields")
-      return
+      toast.error('Please fill in all fields');
+      return;
     }
-    toast.success("Message sent successfully! We'll get back to you soon.")
-    setName("")
-    setEmail("")
-    setMessage("")
-  }
+    toast.success(
+      "Message sent successfully! We'll get back to you soon.",
+    );
+    setName('');
+    setEmail('');
+    setMessage('');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,15 +74,31 @@ export default function ContactPage() {
           <div className="space-y-5">
             {/* Info cards */}
             {[
-              { icon: Phone, label: "Phone", value: contactInfo.phone },
-              { icon: Mail, label: "Email", value: contactInfo.email },
-              { icon: MapPin, label: "Address", value: contactInfo.address },
+              {
+                icon: Phone,
+                label: 'Phone',
+                value: contactInfo.phone,
+              },
+              {
+                icon: Mail,
+                label: 'Email',
+                value: contactInfo.email,
+              },
+              {
+                icon: MapPin,
+                label: 'Address',
+                value: contactInfo.address,
+              },
             ].map((item, i) => (
               <motion.div
                 key={item.label}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * i, ease: [0.2, 0, 0, 1] }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.1 * i,
+                  ease: [0.2, 0, 0, 1],
+                }}
                 className="group relative flex items-center gap-4 rounded-2xl border border-border/50 bg-card/80 p-5 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_-4px_rgba(212,164,74,0.15)] dark:border-white/[0.06] dark:bg-white/[0.04]"
               >
                 <div className="absolute left-0 top-2 h-8 w-0.5 rounded-full bg-primary/40 transition-all duration-300 group-hover:bg-primary/60" />
@@ -101,18 +120,13 @@ export default function ContactPage() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3, ease: [0.2, 0, 0, 1] }}
-              className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl dark:border-white/[0.06] dark:bg-white/[0.04]"
+              transition={{
+                duration: 0.4,
+                delay: 0.3,
+                ease: [0.2, 0, 0, 1],
+              }}
             >
-              <iframe
-                src="https://www.openstreetmap.org/export/embed.html?bbox=76.45,31.20,76.55,31.27&layer=mapnik&marker=31.2325,76.5025"
-                width="100%"
-                height="200"
-                title="Shri Anandpur Sahib Location"
-                className="block"
-                style={{ border: 0 }}
-                loading="lazy"
-              />
+              <StaticMap lat={31.2325} lng={76.5025} height={280} />
             </motion.div>
           </div>
 
@@ -120,10 +134,17 @@ export default function ContactPage() {
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: [0.2, 0, 0, 1] }}
+            transition={{
+              duration: 0.5,
+              delay: 0.2,
+              ease: [0.2, 0, 0, 1],
+            }}
             className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 p-6 backdrop-blur-2xl sm:p-8 dark:border-white/[0.06] dark:bg-white/[0.04]"
           >
-            <div className="pointer-events-none absolute -top-20 -right-20 h-[300px] w-[300px] rounded-full bg-[#D4A44A]/[0.04] blur-[100px]" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute -top-20 -right-20 h-[300px] w-[300px] rounded-full bg-[#D4A44A]/[0.04] blur-[100px]"
+              aria-hidden="true"
+            />
 
             <div className="relative">
               <h2 className="font-display text-xl font-semibold text-foreground">
@@ -132,7 +153,10 @@ export default function ContactPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 We typically respond within 24 hours.
               </p>
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form
+                onSubmit={handleSubmit}
+                className="mt-6 space-y-4"
+              >
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Name
@@ -165,7 +189,7 @@ export default function ContactPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Your message..."
                     rows={5}
-                    className="resize-none h-30 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15]"
+                    className="resize-none h-50 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15]"
                   />
                 </div>
                 <Button
@@ -184,15 +208,19 @@ export default function ContactPage() {
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4, ease: [0.2, 0, 0, 1] }}
+          transition={{
+            duration: 0.5,
+            delay: 0.4,
+            ease: [0.2, 0, 0, 1],
+          }}
           className="mt-12"
         >
           <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Follow Us
           </p>
           <div className="flex flex-wrap gap-3">
-            {socialLinks?.slice(2,4).map((link) => {
-              const Icon = socialIcons[link.icon] || ExternalLink
+            {socialLinks?.slice(2, 4).map((link) => {
+              const Icon = socialIcons[link.icon] || ExternalLink;
               return (
                 <a
                   key={link.label}
@@ -204,11 +232,11 @@ export default function ContactPage() {
                   <Icon className="size-4" />
                   {link.label}
                 </a>
-              )
+              );
             })}
           </div>
         </motion.div>
       </div>
     </div>
-  )
+  );
 }

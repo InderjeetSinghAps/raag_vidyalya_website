@@ -80,12 +80,12 @@ export function AuthLayout({
         )}
 
         {/* Glass form card */}
-        <div className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card/80 p-6 sm:p-10 shadow-lg backdrop-blur-2xl dark:border-white/[0.06] dark:bg-white/[0.04] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6)]">
+        <div className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card/80 p-4 sm:p-6 shadow-lg backdrop-blur-2xl dark:border-white/[0.06] dark:bg-white/[0.04] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.6)]">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.2, 0, 0, 1] }}
-            className="space-y-6"
+            className="space-y-3"
           >
             {children}
           </motion.div>

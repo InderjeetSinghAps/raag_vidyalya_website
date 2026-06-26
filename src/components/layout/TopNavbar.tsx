@@ -10,27 +10,49 @@ import {
   User,
   BookOpen,
   LogOut,
+  ChevronDown,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useLogoutMutation, resolveImageUrl } from '@/store/api';
 import { logout } from '@/store/authSlice';
 
-import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { AuthLinks } from './AuthLinks';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LogoutModal } from '@/components/auth/LogoutModal';
 
-const navLinks = [
+interface NavItem {
+  label: string;
+  href?: string;
+  requiresAuth?: boolean;
+  children?: { label: string; href: string; requiresAuth?: boolean }[];
+}
+
+const navItems: NavItem[] = [
   { label: 'Home', href: '/home' },
   { label: 'Courses', href: '/courses' },
-  { label: 'Gurmat Sangeet', href: '/gurmat-sangeet' },
-  { label: 'Gurbani', href: '/gurbani' },
-  { label: 'Videos', href: '/videos' },
-  { label: 'Upload Video', href: '/upload-video' },
-  { label: 'Our Store', href: '/store' },
-  { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
+  {
+    label: 'Learn',
+    children: [
+      { label: 'Gurmat Sangeet', href: '/gurmat-sangeet' },
+      { label: 'Gurbani', href: '/gurbani' },
+      { label: 'Videos', href: '/videos', requiresAuth: true },
+      { label: 'Upload Video', href: '/upload-video', requiresAuth: true },
+    ],
+  },
+  { label: 'Our Store', href: '/store', requiresAuth: true },
+  {
+    label: 'More',
+    children: [
+      { label: 'About', href: '/about' },
+      { label: 'Contact', href: '/contact' },
+    ],
+  },
 ];
 
 const glassDialog =
@@ -56,11 +78,11 @@ export function TopNavbar() {
     try {
       await logoutApi().unwrap();
     } catch {
-      /* still clear local state */
     }
     setDropdownOpen(false);
     setMobileOpen(false);
     setShowLogoutModal(false);
+    dispatch(logout());
     router.push('/home');
   };
 
@@ -115,23 +137,55 @@ export function TopNavbar() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm font-medium transition-all duration-300 ${
-                isActive(link.href)
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
-            >
-              {link.label}
-              {isActive(link.href) && (
-                <div className="mx-auto mt-0.5 h-0.5 w-4 rounded-full bg-primary" />
-              )}
-            </Link>
-          ))}
+        <div className="hidden items-center gap-6 md:flex">
+          {navItems.map((item) =>
+            item.href ? (
+              (!item.requiresAuth || isAuthenticated) && (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-medium transition-all duration-300 ${
+                  isActive(item.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                {item.label}
+                {isActive(item.href) && (
+                  <div className="mx-auto mt-0.5 h-0.5 w-4 rounded-full bg-primary" />
+                )}
+              </Link>
+              )
+            ) : (
+              <DropdownMenu key={item.label}>
+                <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1 text-sm font-medium text-muted-foreground transition-all duration-300 hover:text-primary">
+                  {item.label}
+                  <ChevronDown size={14} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center">
+                  {item.children
+                    ?.filter(
+                      (child) =>
+                        !child.requiresAuth || isAuthenticated,
+                    )
+                    .map((child) => (
+                      <DropdownMenuItem key={child.href} className="p-0">
+                        <Link
+                          href={child.href}
+                          className={`block w-full rounded px-2 py-1.5 text-sm ${
+                            isActive(child.href)
+                              ? 'text-primary font-medium'
+                              : 'text-muted-foreground'
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -155,17 +209,6 @@ export function TopNavbar() {
                       alt=""
                       referrerPolicy="no-referrer"
                       className="size-6 rounded-full object-cover"
-                      onLoad={() =>
-                        console.log('[NavbarAvatar] onLoad')
-                      }
-                      onError={(e) => {
-                        console.log(
-                          '[NavbarAvatar] onError',
-                          (e.target as HTMLImageElement).src,
-                        );
-                        (e.target as HTMLImageElement).style.display =
-                          'none';
-                      }}
                     />
                   ) : (
                     <div className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
@@ -233,20 +276,42 @@ export function TopNavbar() {
           style={{ background: 'var(--nav-gradient)' }}
         >
           <div className="flex flex-col gap-1 px-8 py-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isActive(link.href)
-                    ? 'bg-muted text-primary'
-                    : 'text-muted-foreground hover:bg-muted hover:text-primary'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navItems.flatMap((item) =>
+              item.children
+                ? item.children
+                    .filter(
+                      (child) =>
+                        !child.requiresAuth || isAuthenticated,
+                    )
+                    .map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                          isActive(child.href)
+                            ? 'bg-muted text-primary'
+                            : 'text-muted-foreground hover:bg-muted hover:text-primary'
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    ))
+                : (!item.requiresAuth || isAuthenticated) && (
+                    <Link
+                      key={item.href}
+                      href={item.href!}
+                      onClick={() => setMobileOpen(false)}
+                      className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                        isActive(item.href!)
+                          ? 'bg-muted text-primary'
+                          : 'text-muted-foreground hover:bg-muted hover:text-primary'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ),
+            )}
             <div className="mt-2 border-t border-border pt-3">
               {mounted ? (
                 isAuthenticated && user ? (

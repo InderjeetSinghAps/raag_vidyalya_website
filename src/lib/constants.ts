@@ -6,6 +6,11 @@ export const PROTECTED_ROUTES = [
   '/courses/bookmarks/[id]',
   '/courses/[id]',
   '/courses/[id]/lecture/[videoId]',
+  '/videos',
+  '/videos/[id]',
+  '/upload-video',
+  '/store',
+  '/store/[id]',
 ];
 
 export let API_BASE_URL = '';

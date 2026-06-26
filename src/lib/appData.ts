@@ -25,7 +25,12 @@ function saveCache(data: Record<string, unknown>) {
 export async function loadAppConstants() {
   try {
     const db = await getFirestoreDb()
-    const snap = await getDoc(doc(db, 'app_data', 'constants'))
+    const snap = await Promise.race([
+      getDoc(doc(db, 'app_data', 'constants')),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Firestore read timed out')), 5000),
+      ),
+    ])
     if (snap.exists()) {
       const data = snap.data()
       saveCache(data)

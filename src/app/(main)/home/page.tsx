@@ -418,15 +418,18 @@ function StoreCard({ product }: { product: StoreProduct }) {
 export default function HomePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(
+    (s) => s.auth.isAuthenticated,
+  );
   const { data: coursesData } = useGetCoursesQuery({
     page: 1,
     limit: 4,
   });
   const courses = coursesData?.courses ?? [];
-  const { data: productsData } = useGetProductsQuery({
-    page: 1,
-    limit: 4,
-  });
+  const { data: productsData } = useGetProductsQuery(
+    { page: 1, limit: 4 },
+    { skip: !isAuthenticated },
+  );
   const storeProducts = productsData?.products ?? [];
   const [courseThumbStates, setCourseThumbStates] = useState<
     Record<string, 'maxresdefault' | 'hqdefault' | 'failed'>
@@ -446,9 +449,6 @@ export default function HomePage() {
   };
   const { data: raagsData } = useGetRaagsQuery();
   const apiRaags = raagsData?.raags ?? [];
-  const isAuthenticated = useAppSelector(
-    (s) => s.auth.isAuthenticated,
-  );
   const { data: accessData } = useGetRaagAccessQuery(undefined, {
     skip: !isAuthenticated,
   });
@@ -980,29 +980,31 @@ export default function HomePage() {
 
       <CollaboratorsSection />
 
-      <section className={sectionHeading}>
-        <div className="mx-auto max-w-7xl">
-          <div className="flex items-center justify-between">
-            <SectionHeader
-              title="Our Store"
-              subtitle="Books, instruments, and more"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary transition-all duration-200 active:scale-[0.96]"
-              onClick={() => router.push('/store')}
-            >
-              View All
-            </Button>
+      {isAuthenticated && (
+        <section className={sectionHeading}>
+          <div className="mx-auto max-w-7xl">
+            <div className="flex items-center justify-between">
+              <SectionHeader
+                title="Our Store"
+                subtitle="Books, instruments, and more"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary transition-all duration-200 active:scale-[0.96]"
+                onClick={() => router.push('/store')}
+              >
+                View All
+              </Button>
+            </div>
+            <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {storeProducts.slice(0, 5).map((product) => (
+                <StoreCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {storeProducts.slice(0, 5).map((product) => (
-              <StoreCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <footer className="border-t border-border bg-gradient-to-t from-background to-transparent py-8 text-center">
         <p className="text-sm text-muted-foreground">

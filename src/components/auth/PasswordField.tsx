@@ -29,7 +29,7 @@ const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             id={id}
             ref={ref}
             type={showPassword ? "text" : "password"}
-            className={`h-11 w-full rounded-lg border-black/[0.08] bg-black/[0.04] pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15] ${className}`}
+            className={`h-10 w-full rounded-lg border-black/[0.08] bg-black/[0.04] pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 hover:border-black/[0.15] focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25 dark:hover:border-white/[0.15] ${className}`}
             {...props}
           />
           <button
