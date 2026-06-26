@@ -35,8 +35,11 @@ export async function loadAppConstants() {
   } catch (err) {
     console.warn('[appData] Failed to load constants from Firestore', err)
   }
+  const FALLBACK_DEFAULTS: Record<string, unknown> = {
+    youtube_channel_link: 'https://youtube.com/@raagvidyalya',
+  }
   const cached = loadCache()
   if (cached) {
-    setConstants(cached)
+    setConstants({ ...FALLBACK_DEFAULTS, ...cached })
   }
 }

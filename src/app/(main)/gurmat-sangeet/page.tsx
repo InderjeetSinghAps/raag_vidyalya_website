@@ -102,17 +102,26 @@ export default function GurmatSangeetPage() {
                 )
               }
             >
-              <div className="relative flex h-32 items-center justify-center rounded-t-xl bg-background">
-                {raag.id > 2 && !unlockedSet.has(raag.id) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
-                    <Lock className="size-8 text-amber-400/60" />
+              <div className="flex h-32 items-center justify-center rounded-t-xl bg-background transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.06)]">
+                {raag.id > 2 && !unlockedSet.has(raag.id) ? (
+                  <div className="flex flex-col items-center gap-2.5">
+                    <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500/80 shadow-[0_0_20px_rgba(212,175,55,0.15),inset_0_0_12px_rgba(212,175,55,0.06)]">
+                      <Lock className="size-7 text-white" />
+                    </div>
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.15em]">
+                      <span className="size-1 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500" />
+                      <span className="bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                        Premium
+                      </span>
+                    </span>
                   </div>
+                ) : (
+                  <img
+                    src="/logo2.svg"
+                    alt="logo"
+                    className="size-40 text-cyan-400/30"
+                  />
                 )}
-                <img
-                  src="/logo2.svg"
-                  alt="logo"
-                  className="size-40 text-cyan-400/30"
-                />
               </div>
               <CardContent className="flex flex-1 flex-col gap-3">
                 <div className="flex items-center justify-between">
@@ -130,8 +139,8 @@ export default function GurmatSangeetPage() {
                     // </Badge>
                     <></>
                   ) : (
-                    <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
-                      <Crown className="size-3" />
+                    <Badge className="border border-amber-400/30 bg-gradient-to-r from-amber-500/15 to-yellow-500/15">
+                      <Crown className="size-3 text-amber-400" />
                     </Badge>
                   )}
                 </div>

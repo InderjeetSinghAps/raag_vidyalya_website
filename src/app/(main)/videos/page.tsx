@@ -9,7 +9,6 @@ import {
   User as UserIcon,
   Loader2,
   Bookmark,
-  Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +20,6 @@ import {
   useAddCourseVideoBookmarkMutation,
   useRemoveCourseVideoBookmarkMutation,
 } from '@/store/api';
-import { UPLOAD_VIDEO_URL } from '@/lib/constants';
 
 export default function VideosPage() {
   const router = useRouter();
@@ -43,9 +41,14 @@ export default function VideosPage() {
   const totalPages = data?.totalPages ?? 1;
 
   const { data: bookmarksData } = useGetCourseVideoBookmarksQuery();
-  const bookmarkedUrls = new Set(
+  const [bookmarkedUrls, setBookmarkedUrls] = useState(() => new Set(
     bookmarksData?.bookmarks?.map((b) => b.videoUrl) ?? [],
-  );
+  ));
+  useEffect(() => {
+    setBookmarkedUrls(new Set(
+      bookmarksData?.bookmarks?.map((b) => b.videoUrl) ?? [],
+    ));
+  }, [bookmarksData]);
   const [addBookmark] = useAddCourseVideoBookmarkMutation();
   const [removeBookmark] = useRemoveCourseVideoBookmarkMutation();
 
@@ -61,18 +64,6 @@ export default function VideosPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {UPLOAD_VIDEO_URL && (
-            <a
-              href={UPLOAD_VIDEO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" className="gap-2">
-                <Upload className="size-4" />
-                Upload Video
-              </Button>
-            </a>
-          )}
           <div className="relative w-full sm:w-72">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -170,7 +161,11 @@ export default function VideosPage() {
                             );
                           if (bookmark) {
                             removeBookmark(bookmark._id);
-                            bookmarkedUrls.delete(video.videoUrl);
+                            setBookmarkedUrls(prev => {
+                              const next = new Set(prev);
+                              next.delete(video.videoUrl);
+                              return next;
+                            });
                             toast.success('Removed from bookmarks');
                           }
                         } else {
@@ -179,7 +174,11 @@ export default function VideosPage() {
                             videoUrl: video.videoUrl,
                             description: video.description,
                           });
-                          bookmarkedUrls.add(video.videoUrl);
+                          setBookmarkedUrls(prev => {
+                            const next = new Set(prev);
+                            next.add(video.videoUrl);
+                            return next;
+                          });
                           toast.success('Added to bookmarks');
                         }
                       }}

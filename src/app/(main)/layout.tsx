@@ -6,16 +6,7 @@ import { CartSheet } from "@/components/layout/CartSheet"
 import { useAppSelector } from "@/store/hooks"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-
-const PROTECTED_ROUTES = [
-  "/profile",
-  "/wallet",
-  "/courses/my-courses",
-  "/courses/bookmarks",
-  "/courses/bookmarks/[id]",
-  "/courses/[id]",
-  "/courses/[id]/lecture/[videoId]",
-]
+import { PROTECTED_ROUTES } from "@/lib/constants"
 
 function isProtected(pathname: string) {
   return PROTECTED_ROUTES.some((route) => {

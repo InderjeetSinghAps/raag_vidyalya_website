@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ArrowLeft, Play, Pause, Square, RefreshCw } from 'lucide-react'
 import { LIVE_AMRITSAR_KIRTAN_URL } from '@/lib/constants'
 
@@ -95,8 +96,8 @@ export default function LivePage() {
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
         <div className="size-[600px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.08),transparent_50%)]" />
       </div>
-      <div className="pointer-events-none fixed inset-0 flex select-none items-center justify-center">
-        <span className="leading-none text-white/[0.03] text-[min(50vw,400px)]">ੴ</span>
+      <div className="pointer-events-none fixed inset-0">
+        <Image src="/logo3.svg" fill className="object-contain opacity-[0.03]" alt="" />
       </div>
 
       <main className="relative z-10 mx-auto flex w-full max-w-[900px] flex-col items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 80px)' }}>

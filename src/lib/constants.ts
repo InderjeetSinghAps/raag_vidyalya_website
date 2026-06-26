@@ -1,9 +1,20 @@
+export const PROTECTED_ROUTES = [
+  '/profile',
+  '/wallet',
+  '/courses/my-courses',
+  '/courses/bookmarks',
+  '/courses/bookmarks/[id]',
+  '/courses/[id]',
+  '/courses/[id]/lecture/[videoId]',
+];
+
 export let API_BASE_URL = '';
 export let MEDIA_BASE_URL = '';
 export let DEVICE_TYPE = 2;
 export let IS_MOCK_AUTH = false;
 export let UPLOAD_VIDEO_URL = '';
 export let LIVE_AMRITSAR_KIRTAN_URL = '';
+export let YOUTUBE_CHANNEL_LINK = '';
 
 export function setConstants(data: Record<string, unknown>) {
   if (typeof data.base_url === 'string') API_BASE_URL = data.base_url;
@@ -17,4 +28,6 @@ export function setConstants(data: Record<string, unknown>) {
     UPLOAD_VIDEO_URL = data.upload_video_url;
   if (typeof data.live_amritsar_kirtan_url === 'string')
     LIVE_AMRITSAR_KIRTAN_URL = data.live_amritsar_kirtan_url;
+  if (typeof data.youtube_channel_link === 'string')
+    YOUTUBE_CHANNEL_LINK = data.youtube_channel_link;
 }

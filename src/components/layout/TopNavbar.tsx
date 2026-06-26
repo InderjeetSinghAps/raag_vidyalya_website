@@ -27,6 +27,7 @@ const navLinks = [
   { label: 'Gurmat Sangeet', href: '/gurmat-sangeet' },
   { label: 'Gurbani', href: '/gurbani' },
   { label: 'Videos', href: '/videos' },
+  { label: 'Upload Video', href: '/upload-video' },
   { label: 'Our Store', href: '/store' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },

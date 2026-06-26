@@ -45,7 +45,7 @@ export default function BandishViewPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex h-14 items-center gap-3 border-b border-border px-4">
         <button
           onClick={() => router.back()}
@@ -58,7 +58,7 @@ export default function BandishViewPage() {
         <h1 className="text-base font-semibold text-foreground">{bandish.bandishName}</h1>
       </header>
 
-      <div className="flex-1 min-h-0 pb-20">
+      <div className="flex-1 min-h-0">
         {bandish.pdfUrl && <PdfViewer url={bandish.pdfUrl} />}
       </div>
 

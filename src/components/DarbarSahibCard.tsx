@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 
 export function DarbarSahibCard() {
@@ -13,8 +14,8 @@ export function DarbarSahibCard() {
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="size-[500px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.06),transparent_50%)]" />
       </div>
-      <div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center">
-        <span className="leading-none text-muted-foreground/[0.025] text-[min(40vw,300px)]">ੴ</span>
+      <div className="pointer-events-none absolute inset-0">
+        <Image src="/logo3.svg" fill className="object-contain opacity-[0.025]" alt="" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center">
@@ -25,18 +26,7 @@ export function DarbarSahibCard() {
           <span className="text-amber-500/70">Amritsar</span>
         </h3>
 
-        <div className="relative mt-5 size-[180px] md:size-[240px]">
-          <div
-            className="absolute inset-0 rounded-full border-2 border-amber-500/20"
-            style={{ boxShadow: '0 0 60px rgba(212,175,55,.08), 0 0 120px rgba(212,175,55,.04)' }}
-          />
-          <div
-            className="absolute inset-[3px] flex items-center justify-center rounded-full bg-gradient-to-b from-[#171732]/80 to-[#090912]/80"
-            style={{ boxShadow: 'inset 0 0 40px rgba(212,175,55,.06)' }}
-          >
-            <span className="select-none text-5xl text-amber-500/15 md:text-6xl">ੴ</span>
-          </div>
-        </div>
+        <span className="mt-6 select-none text-7xl md:text-8xl">ੴ</span>
       </div>
     </div>
   )

@@ -18,10 +18,10 @@ import {
   Headphones,
   GraduationCap,
   TrendingUp,
-  Music2,
   Lock,
   Gift,
   Crown,
+  UserRound,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -211,7 +211,9 @@ function PreviousResultSection() {
               </div>
             </div>
             <div className="space-y-2 p-4">
-              <h3 className="font-semibold text-foreground">{result.title}</h3>
+              <h3 className="font-semibold text-foreground">
+                {result.title}
+              </h3>
               {result.description && (
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {result.description}
@@ -257,12 +259,12 @@ function CollaboratorsSection() {
               className="group w-72 shrink-0 overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97] flex flex-col"
             >
               <div className="relative h-46 bg-gradient-to-br from-primary/20 to-primary/5">
-                {c.coverProfile && (
-                  <img
-                    src={c.coverProfile}
-                    alt=""
-                    className="size-full object-cover"
-                  />
+                {c.coverProfile ? (
+                  <img src={c.coverProfile} alt="" className="size-full object-cover" />
+                ) : (
+                  <div className="flex size-full items-center justify-center">
+                    <Users className="size-12 text-primary/10" />
+                  </div>
                 )}
                 <div className="absolute -bottom-8 left-4 size-16 overflow-hidden rounded-full border-2 border-card bg-muted">
                   {c.profile ? (
@@ -273,7 +275,7 @@ function CollaboratorsSection() {
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center bg-primary/10">
-                      <Users className="size-6 text-primary/60" />
+                      <UserRound className="size-6 text-primary/60" />
                     </div>
                   )}
                 </div>
@@ -444,9 +446,15 @@ export default function HomePage() {
   };
   const { data: raagsData } = useGetRaagsQuery();
   const apiRaags = raagsData?.raags ?? [];
-  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
-  const { data: accessData } = useGetRaagAccessQuery(undefined, { skip: !isAuthenticated });
-  const unlockedSet = new Set(accessData?.raagAccess?.map((r) => r.raagNumber) ?? []);
+  const isAuthenticated = useAppSelector(
+    (s) => s.auth.isAuthenticated,
+  );
+  const { data: accessData } = useGetRaagAccessQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const unlockedSet = new Set(
+    accessData?.raagAccess?.map((r) => r.raagNumber) ?? [],
+  );
 
   const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
@@ -471,8 +479,13 @@ export default function HomePage() {
 
   return (
     <div className="bg-background relative">
-      <div className="pointer-events-none fixed inset-0 flex select-none items-center justify-center">
-        <span className="leading-none text-white/[0.015] text-[min(50vw,350px)]">ੴ</span>
+      <div className="pointer-events-none fixed inset-0">
+        <Image
+          src="/logo3.svg"
+          fill
+          className="object-contain opacity-[0.015]"
+          alt=""
+        />
       </div>
       <section className="relative min-h-[calc(100vh-72px)] overflow-hidden px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0">
@@ -557,7 +570,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-<section className="py-12 px-4 sm:px-6 lg:px-8">
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {featureCards.map((feature) => (
             <div
@@ -593,7 +606,7 @@ export default function HomePage() {
         </div>
       </section>
 
-{LIVE_AMRITSAR_KIRTAN_URL && (
+      {LIVE_AMRITSAR_KIRTAN_URL && (
         <section className={sectionHeading}>
           <div className="mx-auto max-w-7xl">
             <SectionHeader
@@ -602,13 +615,14 @@ export default function HomePage() {
             />
             <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <Card
-                className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                className="w-72 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
                 onClick={() => router.push('/live')}
               >
-                <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-900/40 to-amber-950/60">
-                  <div className="flex size-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-                    <Play className="size-8 text-white/80" />
-                  </div>
+                <div className="relative flex h-44 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-900/40 to-amber-950/60">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.1),transparent_50%)]" />
+                  <span className="relative select-none text-7xl text-white/25 drop-shadow-[0_0_12px_rgba(212,175,55,0.3)]">
+                    ੴ
+                  </span>
                   <Badge className="absolute left-2 top-2 flex items-center gap-1 border-0 bg-red-500/90 px-2 py-1 text-[10px] font-semibold text-white uppercase tracking-wider">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -618,8 +632,12 @@ export default function HomePage() {
                   </Badge>
                 </div>
                 <CardContent className="space-y-2 p-4">
-                  <h3 className="font-semibold text-foreground">Darbar Sahib</h3>
-                  <p className="text-xs text-muted-foreground">Golden Temple, Amritsar</p>
+                  <h3 className="font-semibold text-foreground">
+                    Darbar Sahib
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Golden Temple, Amritsar
+                  </p>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -637,17 +655,26 @@ export default function HomePage() {
                 </CardContent>
               </Card>
               <Card
-                className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                className="w-72 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
                 onClick={() => router.push('/riyaz/tanpura')}
               >
-                <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-800/50 to-[#0B1020]">
-                  <div className="flex size-16 items-center justify-center rounded-full bg-[rgba(212,160,23,.15)] backdrop-blur-sm">
-                    <Music2 className="size-8 text-amber-400/80" />
-                  </div>
+                <div className="relative flex h-44 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-amber-800/50 to-[#0B1020]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_50%)]" />
+                  <Image
+                    src="/tanpura.png"
+                    width={250}
+                    height={250}
+                    className="relative object-contain opacity-70"
+                    alt=""
+                  />
                 </div>
                 <CardContent className="space-y-2 p-4">
-                  <h3 className="font-semibold text-foreground">Daily Riyaz</h3>
-                  <p className="text-xs text-muted-foreground">Tanpura practice & exercises</p>
+                  <h3 className="font-semibold text-foreground">
+                    Daily Riyaz
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Tanpura practice & exercises
+                  </p>
                   <div className="flex items-center gap-1 text-xs text-amber-400/80">
                     Build your daily practice routine
                   </div>
@@ -663,7 +690,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-)}
+      )}
 
       <PreviousResultSection />
 
@@ -765,70 +792,87 @@ export default function HomePage() {
           >
             <CarouselContent className="-ml-4">
               {apiRaags.slice(0, 8).map((raag: RaagApiItem) => {
-                const isFree = raag.id <= 2
-                const isUnlocked = unlockedSet.has(raag.id)
+                const isFree = raag.id <= 2;
+                const isUnlocked = unlockedSet.has(raag.id);
                 return (
-                <CarouselItem
-                  key={raag._id}
-                  onClick={() =>
-                    router.push(`/gurmat-sangeet/${raag._id}`)
-                  }
-                  className="basis-[65%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
-                >
-                  <div className="flex h-full flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
-                    <div className="relative flex h-28 shrink-0 items-center justify-center rounded-lg">
-                      {!isFree && !isUnlocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px] rounded-lg z-10">
-                          <Lock className="size-7 text-amber-400/60" />
+                  <CarouselItem
+                    key={raag._id}
+                    onClick={() =>
+                      router.push(`/gurmat-sangeet/${raag._id}`)
+                    }
+                    className="basis-[65%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
+                  >
+                    <div className="flex h-full flex-col rounded-xl bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]">
+                      <div className="relative flex h-28 shrink-0 items-center justify-center rounded-lg">
+                        {!isFree && !isUnlocked ? (
+                          <div className="flex flex-col items-center gap-2.5">
+                            <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500/80 shadow-[0_0_20px_rgba(212,175,55,0.15),inset_0_0_12px_rgba(212,175,55,0.06)]">
+                              <Lock className="size-6 text-white" />
+                            </div>
+                            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.15em]">
+                              <span className="size-1 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500" />
+                              <span className="bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                                Premium
+                              </span>
+                            </span>
+                          </div>
+                        ) : (
+                          <img
+                            src="/logo2.svg"
+                            alt="logo"
+                            className="size-40 text-primary/30"
+                          />
+                        )}
+                      </div>
+                      <div className="mt-3 flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-foreground">
+                            {raag.name}
+                          </h3>
+                          {isFree && (
+                            <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
+                              Free
+                            </Badge>
+                          )}
+                          {isUnlocked && (
+                            <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">
+                              <Crown className="mr-0.5 size-3" />
+                              Premium
+                            </Badge>
+                          )}
+                          {!isFree && !isUnlocked && (
+                            <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                              <Crown className="size-3" />
+                            </Badge>
+                          )}
                         </div>
-                      )}
-                      <img
-                        src="/logo2.svg"
-                        alt="logo"
-                        className="size-40 text-primary/30"
-                      />
-                    </div>
-                    <div className="mt-3 flex-1 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-foreground">
-                          {raag.name}
-                        </h3>
-                        {isFree && (
-                          <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">Free</Badge>
-                        )}
-                        {isUnlocked && (
-                          <Badge className="border border-green-500/20 bg-green-500/10 text-[10px] font-medium text-green-400">
-                            <Crown className="mr-0.5 size-3" />
-                            Premium
-                          </Badge>
-                        )}
-                        {!isFree && !isUnlocked && (
-                          <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-400">
-                            <Crown className="size-3" />
-                          </Badge>
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Thaat: {raag.thaat}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="size-3" />
+                          <span>{raag.time}</span>
+                        </div>
+                        <p className="font-mono text-xs text-primary/80">
+                          {raag.aroh}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Thaat: {raag.thaat}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="size-3" />
-                        <span>{raag.time}</span>
-                      </div>
-                      <p className="font-mono text-xs text-primary/80">
-                        {raag.aroh}
-                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
+                      >
+                        {!isFree && !isUnlocked ? (
+                          <>
+                            <Lock className="mr-1.5 size-3" /> Premium
+                          </>
+                        ) : (
+                          'View Details'
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-auto w-full border-primary text-primary transition-all duration-200 active:scale-[0.96]"
-                    >
-                      {!isFree && !isUnlocked ? <><Lock className="mr-1.5 size-3" /> Premium</> : 'View Details'}
-                    </Button>
-                  </div>
-                </CarouselItem>
-                )
+                  </CarouselItem>
+                );
               })}
             </CarouselContent>
             <CarouselPrevious className="hidden sm:inline-flex rounded-full border-border text-muted-foreground hover:text-foreground" />

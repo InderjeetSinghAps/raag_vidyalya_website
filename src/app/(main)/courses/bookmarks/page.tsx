@@ -17,7 +17,7 @@ import {
   useGetCourseVideoBookmarksQuery,
   useRemoveCourseVideoBookmarkMutation,
 } from '@/store/api';
-import { getYouTubeVideoId } from '@/lib/video';
+import { getYouTubeThumbnail } from '@/lib/video';
 
 export default function BookmarksPage() {
   const router = useRouter();
@@ -92,11 +92,9 @@ export default function BookmarksPage() {
         </div>
 
         <div className="mt-8 mb-4">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredBookmarks.map((bookmark) => {
-              const thumbSrc = getYouTubeVideoId(bookmark.videoUrl)
-                ? `https://img.youtube.com/vi/${getYouTubeVideoId(bookmark.videoUrl)}/maxresdefault.jpg`
-                : null;
+              const thumbSrc = getYouTubeThumbnail(bookmark.videoUrl);
               return (
                 <div
                   key={bookmark._id}
@@ -105,13 +103,28 @@ export default function BookmarksPage() {
                   }}
                   className="group flex cursor-pointer flex-col rounded-xl border border-border bg-background transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)]"
                 >
-                  <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-background">
+                  <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-t-xl bg-black/20">
                     {thumbSrc ? (
                       <img
                         src={thumbSrc}
                         alt={bookmark.title}
-                        referrerPolicy="no-referrer"
                         className="size-full object-cover"
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          if (img.naturalWidth < 200) {
+                            if (img.src.includes('maxresdefault')) {
+                              img.src = img.src.replace(
+                                'maxresdefault',
+                                'hqdefault',
+                              );
+                            } else {
+                              img.style.display = 'none';
+                              img.nextElementSibling?.classList.remove(
+                                'hidden',
+                              );
+                            }
+                          }
+                        }}
                         onError={(e) => {
                           const img = e.currentTarget;
                           if (img.src.includes('maxresdefault')) {
@@ -128,7 +141,11 @@ export default function BookmarksPage() {
                         }}
                       />
                     ) : null}
-                    <Play className="hidden size-12 text-cyan-400/30" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20">
+                      <div className="flex size-12 items-center justify-center rounded-full bg-cyan-500/80 text-white opacity-0 shadow-lg transition-all group-hover:opacity-100 group-hover:scale-110">
+                        <Play className="size-5 ml-0.5" />
+                      </div>
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
