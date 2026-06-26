@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { playTrack, showMiniPlayer } from '@/store/playerSlice';
 import {
   useGetRaagsQuery,
@@ -21,13 +21,16 @@ export default function RaagDetailPage() {
   const params = useParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(
+    (s) => s.auth.isAuthenticated,
+  );
 
-  const { data, isLoading } = useGetRaagsQuery();
+  const { data, isLoading } = useGetRaagsQuery(undefined);
   const raag = (data?.raags ?? []).find((r) => r._id === params.id);
 
   const { data: accessData } = useGetSingleRaagAccessQuery(
     raag?.id ?? 0,
-    { skip: !raag },
+    { skip: !isAuthenticated },
   );
 
   if (isLoading) {

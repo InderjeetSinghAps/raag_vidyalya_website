@@ -95,7 +95,7 @@ export default function SignupPage() {
       }).unwrap();
 
       await initRevenueCat(socialRes.user.id);
-      toast.success('Account created!');
+      toast.success('Successfully Logged in!');
       router.push('/home');
     } catch (error: unknown) {
       if (
