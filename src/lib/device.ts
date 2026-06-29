@@ -1,8 +1,8 @@
-import { getToken } from 'firebase/messaging'
-import { getMessagingInstance } from './firebase'
+// import { getToken } from 'firebase/messaging'
+// import { getMessagingInstance } from './firebase'
 
 const DEVICE_ID_KEY = 'raag_device_id'
-const DEVICE_TOKEN_KEY = 'raag_device_token'
+// const DEVICE_TOKEN_KEY = 'raag_device_token'
 
 export function getDeviceId(): string {
   if (typeof window === 'undefined') return ''
@@ -15,21 +15,22 @@ export function getDeviceId(): string {
 }
 
 export async function getDeviceToken(): Promise<string> {
-  if (typeof window === 'undefined') return ''
-  const cached = localStorage.getItem(DEVICE_TOKEN_KEY)
-  if (cached) return cached
-  const messaging = await getMessagingInstance()
-  if (!messaging) return getDeviceId()
-  try {
-    const config = await fetch('/api/firebase-config').then((r) => r.json())
-    const token = await getToken(messaging, { vapidKey: config.vapidKey })
-    if (token) {
-      localStorage.setItem(DEVICE_TOKEN_KEY, token)
-    }
-    return token || getDeviceId()
-  } catch {
-    return getDeviceId()
-  }
+  // FCM notification disabled — returns device UUID instead of push token
+  // const cached = localStorage.getItem(DEVICE_TOKEN_KEY)
+  // if (cached) return cached
+  // const messaging = await getMessagingInstance()
+  // if (!messaging) return getDeviceId()
+  // try {
+  //   const config = await fetch('/api/firebase-config').then((r) => r.json())
+  //   const token = await getToken(messaging, { vapidKey: config.vapidKey })
+  //   if (token) {
+  //     localStorage.setItem(DEVICE_TOKEN_KEY, token)
+  //   }
+  //   return token || getDeviceId()
+  // } catch {
+  //   return getDeviceId()
+  // }
+  return getDeviceId()
 }
 
 export function getDeviceType(): number {

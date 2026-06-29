@@ -2,8 +2,10 @@ import { initializeApp, getApps, getApp } from 'firebase/app'
 import type { FirebaseApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import type { Firestore } from 'firebase/firestore'
-import { getMessaging, isSupported } from 'firebase/messaging'
-import type { Messaging } from 'firebase/messaging'
+// import { getMessaging, isSupported } from 'firebase/messaging'
+// import type { Messaging } from 'firebase/messaging'
+// import { getMessaging, isSupported } from 'firebase/messaging'
+// import type { Messaging } from 'firebase/messaging'
 
 const CONFIG_CACHE_KEY = 'firebase_config'
 
@@ -61,8 +63,19 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
   return initPromise
 }
 
+// let messagingInstance: Messaging | null = null
+
+// export async function getMessagingInstance(): Promise<Messaging | null> {
+//   if (messagingInstance) return messagingInstance
+//   const supported = await isSupported()
+//   if (!supported) return null
+//   const firebaseApp = await getFirebaseApp()
+//   messagingInstance = getMessaging(firebaseApp)
+//   return messagingInstance
+// }
+
 let db: Firestore | null = null
-let messagingInstance: Messaging | null = null
+// let messagingInstance: Messaging | null = null
 
 export async function getFirestoreDb(): Promise<Firestore> {
   if (db) return db
@@ -71,11 +84,4 @@ export async function getFirestoreDb(): Promise<Firestore> {
   return db
 }
 
-export async function getMessagingInstance(): Promise<Messaging | null> {
-  if (messagingInstance) return messagingInstance
-  const supported = await isSupported()
-  if (!supported) return null
-  const firebaseApp = await getFirebaseApp()
-  messagingInstance = getMessaging(firebaseApp)
-  return messagingInstance
-}
+
