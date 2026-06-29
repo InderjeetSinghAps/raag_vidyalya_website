@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   useGetRaagsQuery,
   useGetSingleRaagAccessQuery,
 } from '@/store/api';
+import { stripEn } from '@/lib/utils';
 
 export default function RaagDetailPage() {
   const params = useParams();
@@ -28,12 +30,25 @@ export default function RaagDetailPage() {
   const { data, isLoading } = useGetRaagsQuery(undefined);
   const raag = (data?.raags ?? []).find((r) => r._id === params.id);
 
-  const { data: accessData } = useGetSingleRaagAccessQuery(
-    raag?.id ?? 0,
-    { skip: !isAuthenticated },
-  );
+  const { data: accessData, isLoading: accessLoading } =
+    useGetSingleRaagAccessQuery(raag?.id ?? 0, {
+      skip: !isAuthenticated,
+    });
 
-  if (isLoading) {
+  const isAccessLoading = isLoading || (!isAuthenticated ? false : accessLoading);
+
+  useEffect(() => {
+    if (isLoading || !raag) return;
+    if (raag.id > 2) {
+      if (!isAuthenticated) {
+        router.replace('/subscription');
+      } else if (accessData && !accessData.hasAccess && !accessData.isFree) {
+        router.replace('/subscription');
+      }
+    }
+  }, [isLoading, raag, isAuthenticated, accessData, router]);
+
+  if (isAccessLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="size-8 animate-spin text-cyan-400" />
@@ -63,7 +78,7 @@ export default function RaagDetailPage() {
     dispatch(
       playTrack({
         id: raag._id,
-        title: raag.name,
+        title: stripEn(raag.name),
         artist: '',
         audioUrl: raag.audioUrl || '',
         image: '',
@@ -89,7 +104,7 @@ export default function RaagDetailPage() {
         </div>
         <div className="flex flex-1 flex-col justify-center gap-3">
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-            {raag.name}
+            {stripEn(raag.name)}
           </h1>
           {accessData && (
             <div className="flex flex-wrap items-center gap-2">
@@ -102,15 +117,15 @@ export default function RaagDetailPage() {
           )}
           <div className="flex flex-wrap items-center gap-3">
             <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-xs font-medium text-cyan-400">
-              {raag.thaat}
+              {stripEn(raag.thaat)}
             </Badge>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
               <Clock className="size-3.5" />
-              <span>{raag.time}</span>
+              <span>{stripEn(raag.time)}</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground/80">
-            {raag.jaati} — {raag.sur}
+            {stripEn(raag.jaati)} — {stripEn(raag.sur)}
           </p>
         </div>
       </div>
@@ -126,7 +141,7 @@ export default function RaagDetailPage() {
                 Thaat
               </span>
               <p className="mt-1 text-muted-foreground">
-                {raag.thaat}
+                {stripEn(raag.thaat)}
               </p>
             </div>
             <div>
@@ -134,7 +149,7 @@ export default function RaagDetailPage() {
                 Jaati
               </span>
               <p className="mt-1 text-muted-foreground">
-                {raag.jaati}
+                {stripEn(raag.jaati)}
               </p>
             </div>
             <div>
@@ -142,7 +157,7 @@ export default function RaagDetailPage() {
                 Vaadi
               </span>
               <p className="mt-1 text-muted-foreground">
-                {raag.vaadi}
+                {stripEn(raag.vaadi)}
               </p>
             </div>
             <div>
@@ -150,7 +165,7 @@ export default function RaagDetailPage() {
                 Samvadi
               </span>
               <p className="mt-1 text-muted-foreground">
-                {raag.samvadi}
+                {stripEn(raag.samvadi)}
               </p>
             </div>
             <div className="col-span-2">
@@ -158,7 +173,7 @@ export default function RaagDetailPage() {
                 Sur
               </span>
               <p className="mt-1 font-mono text-cyan-400">
-                {raag.sur}
+                {stripEn(raag.sur)}
               </p>
             </div>
             {raag.wargitSur && (
@@ -167,7 +182,7 @@ export default function RaagDetailPage() {
                   Wargit Sur
                 </span>
                 <p className="mt-1 font-mono text-muted-foreground">
-                  {raag.wargitSur}
+                  {raag.wargitSur ? stripEn(raag.wargitSur) : null}
                 </p>
               </div>
             )}
@@ -177,7 +192,7 @@ export default function RaagDetailPage() {
               Aroha
             </span>
             <p className="mt-1 font-mono text-sm text-cyan-400">
-              {raag.aroh}
+              {stripEn(raag.aroh)}
             </p>
           </div>
           <div>
@@ -185,7 +200,7 @@ export default function RaagDetailPage() {
               Avroha
             </span>
             <p className="mt-1 font-mono text-sm text-muted-foreground">
-              {raag.avroh}
+              {stripEn(raag.avroh)}
             </p>
           </div>
         </div>

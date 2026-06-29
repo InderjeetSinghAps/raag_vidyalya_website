@@ -24,6 +24,7 @@ export default function MainLayout({
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const hasTrack = useAppSelector((state) => state.player.currentTrack !== null)
+
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth)
   const protected_ = isProtected(pathname)
 
@@ -65,7 +66,7 @@ export default function MainLayout({
     <div className="min-h-screen bg-background">
       <TopNavbar />
       <main className={`pt-[72px] ${hasTrack ? "pb-32" : "pb-8"}`}>{children}</main>
-      <MiniPlayer />
+      {!pathname.startsWith('/courses/') && <MiniPlayer />}
       <CartSheet />
     </div>
   )

@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers"
 export const metadata: Metadata = {
   title: "Raag Vidyalaya - Learn Gurmat Sangeet",
   description: "Discover the divine art of Gurmat Sangeet. Learn raags, hymns, and musical traditions of the Sikh Gurus.",
+  icons: { icon: "/logo3.svg", apple: "/logo3.svg" },
 }
 
 export default function RootLayout({

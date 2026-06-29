@@ -12,17 +12,10 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useGetCoursesQuery } from '@/store/api';
-import { getYouTubeVideoId } from '@/lib/video';
-
-const levelColors: Record<string, string> = {
-  Beginner: 'text-emerald-400 border-emerald-500/20',
-  Intermediate: 'text-amber-400 border-amber-500/20',
-  Advanced: 'text-rose-400 border-rose-500/20',
-};
+import { CourseCardImage } from '@/components/CourseCardImage';
 
 const levels = ['beginner', 'intermediate', 'advanced'];
 const typeFilters = ['free', 'paid'];
@@ -114,7 +107,7 @@ export default function CoursesPage() {
               <TabsTrigger
                 key={l}
                 value={l}
-                className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:border-border hover:text-foreground"
+                className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 data-[active]:border-primary data-[active]:bg-primary data-[active]:text-primary-foreground data-[active]:shadow-sm hover:border-border hover:text-foreground"
               >
                 {filterLabels[l] || l}
               </TabsTrigger>
@@ -135,7 +128,7 @@ export default function CoursesPage() {
               <TabsTrigger
                 key={t}
                 value={t}
-                className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground capitalize transition-all duration-200 data-[state=active]:border-cyan-500/50 data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-400 data-[state=active]:shadow-sm hover:border-border hover:text-foreground"
+                className="rounded-full border border-border/50 px-4 py-1.5 text-xs font-medium text-muted-foreground capitalize transition-all duration-200 data-[active]:border-cyan-500/50 data-[active]:bg-primary data-[active]:text-cyan-400 data-[active]:shadow-sm hover:border-border hover:text-foreground"
               >
                 {filterLabels[t] || t}
               </TabsTrigger>
@@ -163,14 +156,7 @@ export default function CoursesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => {
-                const thumbSrc =
-                  course.thumbnail ??
-                  (getYouTubeVideoId(course.videos?.[0]?.videoUrl)
-                    ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/maxresdefault.jpg`
-                    : null);
-
-                return (
+              {courses.map((course) => (
                   <div
                     key={course.id}
                     onClick={() =>
@@ -178,39 +164,7 @@ export default function CoursesPage() {
                     }
                     className="group flex cursor-pointer flex-col rounded-xl border border-border bg-background transition-all hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.08)]"
                   >
-                    <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-background">
-                      {thumbSrc ? (
-                        <img
-                          src={thumbSrc}
-                          alt={course.title}
-                          referrerPolicy="no-referrer"
-                          className="size-full object-cover"
-                          onError={(e) => {
-                            const img = e.currentTarget;
-                            if (img.src.includes('maxresdefault')) {
-                              img.src = img.src.replace(
-                                'maxresdefault',
-                                'hqdefault',
-                              );
-                            } else {
-                              img.style.display = 'none';
-                              img.nextElementSibling?.classList.remove(
-                                'hidden',
-                              );
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <Badge className="absolute left-2 top-2 border border-amber-500/30 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-amber-400 uppercase tracking-wider backdrop-blur-sm">
-                        {course.isFree ? 'Free' : 'Paid'}
-                      </Badge>
-                      <Badge
-                        className={`absolute right-2 top-2 border bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm ${levelColors[course.level] || ''}`}
-                      >
-                        {course.level}
-                      </Badge>
-                      <BookOpen className="hidden size-12 text-cyan-400/30" />
-                    </div>
+                    <CourseCardImage course={course} />
                     <div className="flex flex-1 flex-col space-y-2 p-4">
                       <h3 className="line-clamp-1 text-base font-semibold text-foreground">
                         {course.title}
@@ -255,8 +209,7 @@ export default function CoursesPage() {
                       </Button>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
 
             {courses.length === 0 && (

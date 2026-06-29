@@ -15,20 +15,20 @@ export function getDeviceId(): string {
 }
 
 export async function getDeviceToken(): Promise<string> {
-  if (typeof window === 'undefined') return 'NA'
+  if (typeof window === 'undefined') return ''
   const cached = localStorage.getItem(DEVICE_TOKEN_KEY)
   if (cached) return cached
   const messaging = await getMessagingInstance()
-  if (!messaging) return 'NA'
+  if (!messaging) return getDeviceId()
   try {
     const config = await fetch('/api/firebase-config').then((r) => r.json())
     const token = await getToken(messaging, { vapidKey: config.vapidKey })
     if (token) {
       localStorage.setItem(DEVICE_TOKEN_KEY, token)
     }
-    return token || 'NA'
+    return token || getDeviceId()
   } catch {
-    return 'NA'
+    return getDeviceId()
   }
 }
 

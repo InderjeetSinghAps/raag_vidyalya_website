@@ -156,16 +156,25 @@ export default function CollaboratorDetailPage() {
         transition={{ duration: 0.4, delay: 0.05 }}
         className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/80 via-primary/60 to-primary/30"
       >
-        {collaborator.coverProfile && !coverError ? (
-          <img
-            src={collaborator.coverProfile}
-            alt=""
-            className="h-56 w-full object-cover sm:h-72"
-            onError={() => setCoverError(true)}
-          />
-        ) : (
-          <div className="h-56 sm:h-72" />
-        )}
+        {(() => {
+          const coverSrc = collaborator.coverProfile && !coverError
+            ? collaborator.coverProfile
+            : collaborator.profile
+          return coverSrc ? (
+            <img
+              src={coverSrc}
+              alt=""
+              className="h-56 w-full object-cover sm:h-72"
+              onError={() => {
+                if (coverSrc === collaborator.coverProfile) setCoverError(true)
+              }}
+            />
+          ) : (
+            <div className="flex h-56 items-center justify-center sm:h-72">
+              <User className="size-16 text-white/60" />
+            </div>
+          )
+        })()}
       </motion.div>
 
       <motion.div
@@ -200,7 +209,7 @@ export default function CollaboratorDetailPage() {
         )}
 
         {(collaborator.email || collaborator.phoneNumber) && (
-          <div className="mt-3 flex items-center justify-center gap-4">
+          <div className="mt-3 flex flex-col items-center gap-2">
             {collaborator.email && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
                 <Mail className="size-3.5 shrink-0" />

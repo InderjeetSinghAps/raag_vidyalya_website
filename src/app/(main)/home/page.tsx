@@ -22,6 +22,7 @@ import {
   Gift,
   Crown,
   UserRound,
+  Calendar,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
@@ -42,7 +43,9 @@ import {
   getYouTubeVideoId,
 } from '@/lib/video';
 import { LIVE_AMRITSAR_KIRTAN_URL } from '@/lib/constants';
+import { stripEn } from '@/lib/utils';
 import { DarbarSahibCard } from '@/components/DarbarSahibCard';
+import { CourseCardImage } from '@/components/CourseCardImage';
 import {
   useGetCoursesQuery,
   useGetProductsQuery,
@@ -164,10 +167,8 @@ const appLinks = [
 function PreviousResultSection() {
   const router = useRouter();
   const { data, isLoading } = useGetPreviousResultsQuery();
-  const result = data?.previousResults?.[0];
-  if (!result || isLoading) return null;
-
-  const videoId = getYouTubeVideoId(result.videoUrl);
+  const results = data?.previousResults?.slice(0, 4) ?? [];
+  if (results.length === 0 || isLoading) return null;
 
   return (
     <section className={sectionHeading}>
@@ -175,7 +176,7 @@ function PreviousResultSection() {
         <div className="flex items-center justify-between">
           <SectionHeader
             title="Contest Results"
-            subtitle="Watch the latest contest performance"
+            subtitle="Watch the latest contest performances"
           />
           <Button
             variant="ghost"
@@ -186,41 +187,46 @@ function PreviousResultSection() {
             View All
           </Button>
         </div>
-        <div className="mt-6 flex pb-6 pt-2">
-          <div
-            onClick={() => {
-              if (videoId) {
-                window.open(result.videoUrl, '_blank');
-              }
-            }}
-            className="group w-full max-w-lg cursor-pointer overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-          >
-            <div className="relative flex h-48 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-primary/20 to-primary/5">
-              {videoId ? (
-                <img
-                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                  alt={result.title}
-                  className="absolute inset-0 size-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                  }}
-                />
-              ) : null}
-              <div className="relative flex size-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-                <Play className="size-8 text-white/80" />
+        <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {results.map((r) => {
+            const videoId = getYouTubeVideoId(r.videoUrl);
+            return (
+              <div
+                key={r._id}
+                onClick={() => window.open(r.videoUrl, '_blank')}
+                className="group w-72 shrink-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97] flex"
+              >
+                <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-primary/20 to-primary/5">
+                  {videoId ? (
+                    <img
+                      src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                      alt={r.title}
+                      className="absolute inset-0 size-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                      }}
+                    />
+                  ) : null}
+                  <div className="relative flex size-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-colors">
+                    <Play className="size-6 text-white/90" />
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="font-semibold text-foreground line-clamp-2">{r.title}</h3>
+                  {r.description && (
+                    <p className="mt-1.5 flex-1 text-xs text-muted-foreground line-clamp-2">{r.description}</p>
+                  )}
+                  <div className="mt-auto flex items-center gap-1.5 pt-3 text-[11px] text-muted-foreground/70">
+                    <Calendar className="size-3" />
+                    {new Date(r.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric', month: 'short', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2 p-4">
-              <h3 className="font-semibold text-foreground">
-                {result.title}
-              </h3>
-              {result.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {result.description}
-                </p>
-              )}
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -228,6 +234,7 @@ function PreviousResultSection() {
 }
 
 function CollaboratorsSection() {
+  const router = useRouter();
   const { data: collaborators = [] } = useGetCollaboratorsQuery();
 
   if (collaborators.length === 0) {
@@ -253,19 +260,22 @@ function CollaboratorsSection() {
         />
         <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {collaborators.map((c: Collaborator) => (
-            <a
+            <div
               key={c._id}
-              href={`/collaborator/${c._id}`}
-              className="group w-72 shrink-0 overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97] flex flex-col"
+              onClick={() => router.push(`/collaborator/${c._id}`)}
+              className="group w-72 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97] flex flex-col"
             >
               <div className="relative h-46 bg-gradient-to-br from-primary/20 to-primary/5">
-                {c.coverProfile ? (
-                  <img src={c.coverProfile} alt="" className="size-full object-cover" />
-                ) : (
-                  <div className="flex size-full items-center justify-center">
-                    <Users className="size-12 text-primary/10" />
-                  </div>
-                )}
+                {(() => {
+                  const coverImg = c.coverProfile || c.profile
+                  return coverImg ? (
+                    <img src={coverImg} alt="" className="size-full object-cover" />
+                  ) : (
+                    <div className="flex size-full items-center justify-center">
+                      <Users className="size-12 text-primary/10" />
+                    </div>
+                  )
+                })()}
                 <div className="absolute -bottom-8 left-4 size-16 overflow-hidden rounded-full border-2 border-card bg-muted">
                   {c.profile ? (
                     <img
@@ -306,7 +316,7 @@ function CollaboratorsSection() {
                   </button>
                 )}
               </div>
-            </a>
+            </div>
           ))}
         </div>
       </div>
@@ -431,9 +441,6 @@ export default function HomePage() {
     { skip: !isAuthenticated },
   );
   const storeProducts = productsData?.products ?? [];
-  const [courseThumbStates, setCourseThumbStates] = useState<
-    Record<string, 'maxresdefault' | 'hqdefault' | 'failed'>
-  >({});
   const { data: gurbaniCollections } =
     useGetGurbaniCollectionsQuery();
   const [openCollectionIds, setOpenCollectionIds] = useState<
@@ -664,7 +671,7 @@ export default function HomePage() {
                     src="/tanpura.png"
                     width={250}
                     height={250}
-                    className="relative object-contain opacity-70"
+                    className="relative h-full w-auto object-contain opacity-70"
                     alt=""
                   />
                 </div>
@@ -701,81 +708,35 @@ export default function HomePage() {
             subtitle="Start your journey with our top courses"
           />
           <div className="mt-6 flex gap-4 overflow-x-auto pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {courses.slice(0, 4).map((course) => {
-              const state =
-                courseThumbStates[course.id] || 'maxresdefault';
-              const thumbSrc =
-                course.thumbnail ??
-                (state !== 'failed' &&
-                getYouTubeVideoId(course.videos?.[0]?.videoUrl)
-                  ? `https://img.youtube.com/vi/${getYouTubeVideoId(course.videos[0].videoUrl)}/${state}.jpg`
-                  : null);
-
-              return (
-                <Card
-                  key={course.id}
-                  className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
-                  onClick={() => router.push(`/courses/${course.id}`)}
-                >
-                  <div className="relative flex h-40 shrink-0 items-center justify-center overflow-hidden rounded-t-xl bg-background">
-                    {thumbSrc ? (
-                      <Image
-                        src={thumbSrc}
-                        alt={course.title}
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover"
-                        onError={() => {
-                          setCourseThumbStates((prev) => {
-                            const current =
-                              prev[course.id] || 'maxresdefault';
-                            if (current === 'maxresdefault') {
-                              return {
-                                ...prev,
-                                [course.id]: 'hqdefault',
-                              };
-                            }
-                            return {
-                              ...prev,
-                              [course.id]: 'failed',
-                            };
-                          });
-                        }}
-                      />
-                    ) : null}
-                    <Badge className="absolute left-2 top-2 border border-amber-500/30 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-amber-400 uppercase tracking-wider backdrop-blur-sm">
-                      {course.isFree ? 'Free' : 'Paid'}
-                    </Badge>
+            {courses.slice(0, 4).map((course) => (
+              <Card
+                key={course.id}
+                className="w-64 shrink-0 cursor-pointer overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.97]"
+                onClick={() => router.push(`/courses/${course.id}`)}
+              >
+                <CourseCardImage course={course} />
+                <CardContent className="space-y-2 p-4">
+                  <h3 className="font-semibold text-foreground">
+                    {course.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {course.instructor}
+                  </p>
+                  <div className="flex items-center justify-between">
                     <Badge
-                      className={`absolute right-2 top-2 border bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider backdrop-blur-sm ${levelColors[course.level] || ''}`}
+                      variant="secondary"
+                      className="text-[10px]"
                     >
                       {course.level}
                     </Badge>
-                    <BookOpen className="size-12 text-cyan-400/30" />
+                    <StarRating rating={course.rating} />
                   </div>
-                  <CardContent className="space-y-2 p-4">
-                    <h3 className="font-semibold text-foreground">
-                      {course.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {course.instructor}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px]"
-                      >
-                        {course.level}
-                      </Badge>
-                      <StarRating rating={course.rating} />
-                    </div>
-                    <p className="text-sm font-medium text-primary">
-                      {course.isFree ? 'Free' : `₹${course.price}`}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  <p className="text-sm font-medium text-primary">
+                    {course.isFree ? 'Free' : `₹${course.price}`}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -798,7 +759,11 @@ export default function HomePage() {
                   <CarouselItem
                     key={raag._id}
                     onClick={() =>
-                      router.push(`/gurmat-sangeet/${raag._id}`)
+                      router.push(
+                        !isFree && !isUnlocked
+                          ? '/subscription'
+                          : `/gurmat-sangeet/${raag._id}`,
+                      )
                     }
                     className="basis-[65%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
                   >
@@ -827,7 +792,7 @@ export default function HomePage() {
                       <div className="mt-3 flex-1 space-y-1">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-foreground">
-                            {raag.name}
+                            {stripEn(raag.name)}
                           </h3>
                           {isFree && (
                             <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
@@ -847,14 +812,14 @@ export default function HomePage() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Thaat: {raag.thaat}
+                          Thaat: {stripEn(raag.thaat)}
                         </p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="size-3" />
-                          <span>{raag.time}</span>
+                          <span>{stripEn(raag.time)}</span>
                         </div>
                         <p className="font-mono text-xs text-primary/80">
-                          {raag.aroh}
+                          {stripEn(raag.aroh)}
                         </p>
                       </div>
                       <Button

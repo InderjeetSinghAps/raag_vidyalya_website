@@ -31,10 +31,15 @@ export default function BandishViewPage() {
     });
 
   useEffect(() => {
-    if (accessData && !accessData.hasAccess && !accessData.isFree) {
-      router.replace('/subscription');
+    if (isLoading || !raag) return;
+    if (raag.id > 2) {
+      if (!isAuthenticated) {
+        router.replace('/subscription');
+      } else if (accessData && !accessData.hasAccess && !accessData.isFree) {
+        router.replace('/subscription');
+      }
     }
-  }, [accessData, router]);
+  }, [isLoading, raag, isAuthenticated, accessData, router]);
 
   if (isLoading || accessLoading) {
     return (

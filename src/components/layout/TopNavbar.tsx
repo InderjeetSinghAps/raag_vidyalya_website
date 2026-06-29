@@ -16,6 +16,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useLogoutMutation, resolveImageUrl } from '@/store/api';
 import { logout } from '@/store/authSlice';
 
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -30,29 +31,37 @@ interface NavItem {
   label: string;
   href?: string;
   requiresAuth?: boolean;
-  children?: { label: string; href: string; requiresAuth?: boolean }[];
+  children?: {
+    label: string;
+    href: string;
+    requiresAuth?: boolean;
+  }[];
 }
 
 const navItems: NavItem[] = [
   { label: 'Home', href: '/home' },
   { label: 'Courses', href: '/courses' },
+  // {
+  // label: 'Learn',
+  // children: [
+  { label: 'Gurmat Sangeet', href: '/gurmat-sangeet' },
+  { label: 'Gurbani', href: '/gurbani' },
+  { label: 'Videos', href: '/videos', requiresAuth: true },
   {
-    label: 'Learn',
-    children: [
-      { label: 'Gurmat Sangeet', href: '/gurmat-sangeet' },
-      { label: 'Gurbani', href: '/gurbani' },
-      { label: 'Videos', href: '/videos', requiresAuth: true },
-      { label: 'Upload Video', href: '/upload-video', requiresAuth: true },
-    ],
+    label: 'Upload Video',
+    href: '/upload-video',
+    requiresAuth: true,
   },
+  // ],
+  // },
   { label: 'Our Store', href: '/store', requiresAuth: true },
-  {
-    label: 'More',
-    children: [
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: '/contact' },
-    ],
-  },
+  // {
+  // label: 'More',
+  // children: [
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+  // ],
+  // },
 ];
 
 const glassDialog =
@@ -77,12 +86,12 @@ export function TopNavbar() {
   const handleLogout = async () => {
     try {
       await logoutApi().unwrap();
-    } catch {
-    }
+    } catch {}
     setDropdownOpen(false);
     setMobileOpen(false);
     setShowLogoutModal(false);
     dispatch(logout());
+    toast.success('Logged out successfully');
     router.push('/home');
   };
 
@@ -141,20 +150,20 @@ export function TopNavbar() {
           {navItems.map((item) =>
             item.href ? (
               (!item.requiresAuth || isAuthenticated) && (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-sm font-medium transition-all duration-300 ${
-                  isActive(item.href)
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-primary'
-                }`}
-              >
-                {item.label}
-                {isActive(item.href) && (
-                  <div className="mx-auto mt-0.5 h-0.5 w-4 rounded-full bg-primary" />
-                )}
-              </Link>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`text-sm font-medium transition-all duration-300 ${
+                    isActive(item.href)
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-primary'
+                  }`}
+                >
+                  {item.label}
+                  {isActive(item.href) && (
+                    <div className="mx-auto mt-0.5 h-0.5 w-4 rounded-full bg-primary" />
+                  )}
+                </Link>
               )
             ) : (
               <DropdownMenu key={item.label}>
@@ -169,7 +178,10 @@ export function TopNavbar() {
                         !child.requiresAuth || isAuthenticated,
                     )
                     .map((child) => (
-                      <DropdownMenuItem key={child.href} className="p-0">
+                      <DropdownMenuItem
+                        key={child.href}
+                        className="p-0"
+                      >
                         <Link
                           href={child.href}
                           className={`block w-full rounded px-2 py-1.5 text-sm ${

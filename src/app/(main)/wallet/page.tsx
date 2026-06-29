@@ -2,7 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Wallet, ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react"
+import {
+  ArrowLeft,
+  Wallet,
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  Plus,
+} from "lucide-react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useGetTransactionHistoryQuery } from "@/store/api"
@@ -127,16 +137,25 @@ export default function WalletPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12)_0%,transparent_60%)]" />
         <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
 
-        <div className="relative flex items-center gap-4">
-          <div className="flex size-14 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
-            <Wallet className="size-7 text-white" />
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
+              <Wallet className="size-7 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white/70">Wallet Balance</p>
+              <p className="text-3xl font-bold text-white">
+                {currentBalance} <span className="text-lg font-medium text-white/60">Coins</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-white/70">Wallet Balance</p>
-            <p className="text-3xl font-bold text-white">
-              {currentBalance} <span className="text-lg font-medium text-white/60">Coins</span>
-            </p>
-          </div>
+          <Button
+            onClick={() => router.push("/add-coins")}
+            className="rounded-xl bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+          >
+            <Plus className="mr-1.5 size-4" />
+            Add Coins
+          </Button>
         </div>
       </motion.div>
 

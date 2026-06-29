@@ -26,6 +26,7 @@ import {
   useSocialLoginMutation,
 } from '@/store/api';
 import { getFirebaseApp } from '@/lib/firebase';
+import { getDeviceToken } from '@/lib/device';
 import { initRevenueCat } from '@/lib/revenuecat';
 
 const loginSchema = z.object({
@@ -61,10 +62,12 @@ function LoginForm() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      const deviceToken = await getDeviceToken();
       const res = await login({
         email: data.email,
         password: data.password,
         rememberMe,
+        deviceToken,
       }).unwrap()
       if (res.user) {
         await initRevenueCat(res.user.id)
@@ -91,12 +94,14 @@ function LoginForm() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      const deviceToken = await getDeviceToken();
       const socialRes = await socialLogin({
         email: user.email ?? '',
         provider: 'google',
         providerId: user.uid,
         firstName: user.displayName ?? 'User',
         profileImage: user.photoURL ?? undefined,
+        deviceToken,
       }).unwrap();
 
       await initRevenueCat(socialRes.user.id)

@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { playTrack, showMiniPlayer } from '@/store/playerSlice';
 import { useGetRaagsQuery, useGetRaagAccessQuery } from '@/store/api';
 import type { RaagApiItem } from '@/types';
+import { stripEn } from '@/lib/utils';
 
 export default function GurmatSangeetPage() {
   const router = useRouter();
@@ -44,7 +45,6 @@ export default function GurmatSangeetPage() {
   });
 
   const handleListen = (raag: RaagApiItem) => {
-    console.log('audioUrl', raag.audioUrl);
     dispatch(
       playTrack({
         id: raag._id,
@@ -126,7 +126,7 @@ export default function GurmatSangeetPage() {
               <CardContent className="flex flex-1 flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">
-                    {raag.name}
+                    {stripEn(raag.name)}
                   </h3>
                   {raag.id <= 2 ? (
                     <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
@@ -146,18 +146,18 @@ export default function GurmatSangeetPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className="border border-cyan-500/20 bg-cyan-500/10 text-[10px] font-medium text-cyan-400">
-                    {raag.thaat}
+                    {stripEn(raag.thaat)}
                   </Badge>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
                     <Clock className="size-3" />
-                    <span>{raag.time}</span>
+                    <span>{stripEn(raag.time)}</span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground/80">
-                  {raag.jaati}
+                  {stripEn(raag.jaati)}
                 </p>
                 <p className="font-mono text-xs text-cyan-400">
-                  {raag.aroh}
+                  {stripEn(raag.aroh)}
                 </p>
                 <div className="mt-auto pt-2">
                   <Button

@@ -132,6 +132,7 @@ export default function SignupPage() {
         deviceType: 2,
         deviceToken,
         deviceId,
+        language: 'English',
         referralCode: data.referralCode || undefined,
       }).unwrap();
       toast.success(res.message || 'Account created!');

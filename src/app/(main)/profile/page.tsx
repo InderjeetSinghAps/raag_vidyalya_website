@@ -34,7 +34,6 @@ import {
   LogOut,
   Settings,
   Trash2,
-
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -78,7 +77,6 @@ import { contactInfo } from '@/data/contact';
 
 const inputClass =
   'h-11 rounded-lg border-black/[0.08] bg-black/[0.04] text-sm text-foreground placeholder:text-muted-foreground/50 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-white/[0.08] dark:bg-white/[0.06] dark:placeholder:text-white/25';
-
 
 const glassDialog =
   'sm:max-w-md border-border/50 bg-card/95 backdrop-blur-2xl dark:border-white/[0.06] dark:bg-card/90 [&>button]:text-muted-foreground';
@@ -133,12 +131,12 @@ const menuGroups: {
         action: 'modal',
         value: 'setPassword',
       },
-      {
-        label: 'Change Language',
-        icon: Globe,
-        action: 'modal',
-        value: 'changeLanguage',
-      },
+      // {
+      //   label: 'Change Language',
+      //   icon: Globe,
+      //   action: 'modal',
+      //   value: 'changeLanguage',
+      // },
     ],
   },
   {
@@ -208,16 +206,16 @@ const menuGroups: {
     icon: Settings,
     items: [
       {
-        label: 'Delete Account',
-        icon: Trash2,
-        action: 'modal',
-        value: 'deleteAccount',
-      },
-      {
         label: 'Logout',
         icon: LogOut,
         action: 'modal',
         value: 'logout',
+      },
+      {
+        label: 'Delete Account',
+        icon: Trash2,
+        action: 'modal',
+        value: 'deleteAccount',
       },
     ],
   },
@@ -286,7 +284,8 @@ function EditProfileModal({
     try {
       const payload: Record<string, unknown> = {};
       if (name.trim() !== user?.name) payload.userName = name.trim();
-      if (gender && gender !== '0' && gender !== user?.gender) payload.gender = gender;
+      if (gender && gender !== '0' && gender !== user?.gender)
+        payload.gender = gender;
       if (age) payload.age = Number(age);
       if (phoneValue) {
         payload.phoneNumber = phoneValue;
@@ -345,7 +344,9 @@ function EditProfileModal({
                   />
                 ) : user?.profileImage || user?.avatar ? (
                   <img
-                    src={resolveImageUrl((user.profileImage || user.avatar)!)}
+                    src={resolveImageUrl(
+                      (user.profileImage || user.avatar)!,
+                    )}
                     alt=""
                     referrerPolicy="no-referrer"
                     className="size-full object-cover"
@@ -410,7 +411,10 @@ function EditProfileModal({
               <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Gender
               </Label>
-              <Select value={gender} onValueChange={(v) => v && setGender(v)}>
+              <Select
+                value={gender}
+                onValueChange={(v) => v && setGender(v)}
+              >
                 <SelectTrigger className="h-10 w-full rounded-lg border-border/50 bg-transparent text-sm capitalize text-foreground [&>svg]:text-muted-foreground/60">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -733,7 +737,8 @@ function SuggestionModal({
 }) {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
-  const [submitSuggestion, { isLoading }] = useSubmitSuggestionMutation();
+  const [submitSuggestion, { isLoading }] =
+    useSubmitSuggestionMutation();
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -745,7 +750,10 @@ function SuggestionModal({
       return;
     }
     try {
-      await submitSuggestion({ title: title.trim(), description: text.trim() }).unwrap();
+      await submitSuggestion({
+        title: title.trim(),
+        description: text.trim(),
+      }).unwrap();
       toast.success('Thank you! Your suggestion has been submitted.');
       setTitle('');
       setText('');
@@ -808,7 +816,11 @@ function SuggestionModal({
             </div>
           </div>
 
-          <Button onClick={handleSubmit} disabled={isLoading} className={goldButtonClass}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className={goldButtonClass}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -883,7 +895,12 @@ function PrivacyModal({
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-5 text-sm">
             <p className="text-xs font-medium text-foreground">
-              Raag Vidyalaya is an educational platform dedicated to learning Gurmat Sangeet — the sacred music tradition of Sikhism. The app provides guidance on the 31 Raags mentioned in Sri Guru Granth Sahib Ji, with professional notations and learning resources for students and musicians.
+              Raag Vidyalaya is an educational platform dedicated to
+              learning Gurmat Sangeet — the sacred music tradition of
+              Sikhism. The app provides guidance on the 31 Raags
+              mentioned in Sri Guru Granth Sahib Ji, with professional
+              notations and learning resources for students and
+              musicians.
             </p>
             {sections.map((section, i) => (
               <div key={section.title}>
@@ -979,7 +996,9 @@ function TermsModal({
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-5 text-sm">
             <p className="text-xs font-medium text-foreground">
-              Raag Vidyalya — an educational app dedicated to learning Gurmat Sangeet, focusing on the 31 Raags of Sri Guru Granth Sahib Ji.
+              Raag Vidyalya — an educational app dedicated to learning
+              Gurmat Sangeet, focusing on the 31 Raags of Sri Guru
+              Granth Sahib Ji.
             </p>
             {sections.map((section, i) => (
               <div key={section.title}>
@@ -1127,7 +1146,9 @@ function DeleteAccountModal({
               <TriangleAlert className="size-5 text-red-500" />
             </div>
             <div>
-              <DialogTitle className="text-foreground">Delete Account</DialogTitle>
+              <DialogTitle className="text-foreground">
+                Delete Account
+              </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 This action is permanent and cannot be undone.
               </DialogDescription>
@@ -1137,11 +1158,14 @@ function DeleteAccountModal({
 
         <div className="mt-2 space-y-4">
           <p className="text-sm text-muted-foreground">
-            All your data including enrollments, bookmarks, and wallet will be permanently removed.
+            All your data including enrollments, bookmarks, and wallet
+            will be permanently removed.
           </p>
 
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-            <p className="text-xs font-medium text-red-500">Type <strong>delete my account</strong> to confirm:</p>
+            <p className="text-xs font-medium text-red-500">
+              Type <strong>delete my account</strong> to confirm:
+            </p>
             <Input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
@@ -1159,7 +1183,9 @@ function DeleteAccountModal({
               Cancel
             </Button>
             <Button
-              disabled={confirmText !== 'delete my account' || isLoading}
+              disabled={
+                confirmText !== 'delete my account' || isLoading
+              }
               onClick={handleDelete}
               className="flex-1 h-11 rounded-xl bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
             >
@@ -1208,14 +1234,15 @@ export default function ProfilePage() {
   }, []);
 
   const { data: serverUser } = useGetUserDetailQuery();
-  const [logoutApi, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const [logoutApi, { isLoading: isLoggingOut }] =
+    useLogoutMutation();
 
   const handleProfileLogout = async () => {
     try {
       await logoutApi().unwrap();
-    } catch {
-    }
+    } catch {}
     dispatch(logout());
+    toast.success('Logged out successfully');
     router.push('/home');
   };
 
@@ -1231,8 +1258,8 @@ export default function ProfilePage() {
     } else if (item.action === 'modal') {
       setActiveModal(item.value);
     } else if (item.action === 'logout') {
-      dispatch(logout())
-      router.push('/')
+      dispatch(logout());
+      router.push('/');
     } else {
       toast.info(item.value);
     }
@@ -1401,18 +1428,19 @@ export default function ProfilePage() {
         open={activeModal === 'contactSupport'}
         onClose={closeModal}
       />
-      <DeleteAccountModal
-        open={activeModal === 'deleteAccount'}
-        onClose={closeModal}
-      />
+
       <LogoutModal
         open={activeModal === 'logout'}
         onOpenChange={(v) => {
-          if (!v) closeModal()
+          if (!v) closeModal();
         }}
         user={user}
         isLoggingOut={isLoggingOut}
         onLogout={handleProfileLogout}
+      />
+      <DeleteAccountModal
+        open={activeModal === 'deleteAccount'}
+        onClose={closeModal}
       />
     </div>
   );

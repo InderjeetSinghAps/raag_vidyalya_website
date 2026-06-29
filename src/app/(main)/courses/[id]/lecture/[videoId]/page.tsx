@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Play, Check, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useGetCourseByIdQuery } from '@/store/api';
 import { YouTubeVideo } from '@/components/video/YouTubeVideo';
@@ -41,21 +43,12 @@ export default function LecturePage() {
 
   const isEnrolled = enrolledCourses.includes(course.id) || course.isEnrolled;
 
-  if (!isEnrolled) {
-    return (
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center bg-[#050505] px-4 text-center">
-        <h1 className="text-lg text-white/60">
-          Enroll to access this course
-        </h1>
-        <Button
-          onClick={() => router.push(`/courses/${course.id}`)}
-          className="mt-4 bg-[#2CE6C8] text-black hover:bg-[#2CE6C8]/90"
-        >
-          Go to Course
-        </Button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!isEnrolled) {
+      toast.error('Enroll to access this course');
+      router.replace(`/courses/${course.id}`);
+    }
+  }, [isEnrolled, course, router]);
 
   const sortedVideos = [...course.videos]
     .sort((a, b) => a.order - b.order)

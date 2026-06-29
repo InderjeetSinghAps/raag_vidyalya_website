@@ -49,7 +49,8 @@ export default function CourseDetailPage() {
   const [expandedLesson, setExpandedLesson] = useState<string | null>(
     null,
   );
-  const [enrollCourseApi, { isLoading: isEnrolling }] = useEnrollCourseMutation();
+  const [enrollCourseApi, { isLoading: isEnrolling }] =
+    useEnrollCourseMutation();
   const [heroQuality, setHeroQuality] = useState<
     'maxresdefault' | 'hqdefault'
   >('maxresdefault');
@@ -106,7 +107,9 @@ export default function CourseDetailPage() {
     enrolledCourses.includes(course.id) || course.isEnrolled;
   const firstVideo =
     course.videos.length > 0
-      ? [...course.videos].sort((a, b) => a.order - b.order).filter((v) => v.order !== 0)[0]
+      ? [...course.videos]
+          .sort((a, b) => a.order - b.order)
+          .filter((v) => v.order !== 0)[0]
       : null;
   const hasRating = course.ratingCount > 0;
   const heroImageSrc =
@@ -115,14 +118,20 @@ export default function CourseDetailPage() {
       ? `https://img.youtube.com/vi/${getYouTubeVideoId(firstVideo.videoUrl)}/${heroQuality}.jpg`
       : null);
 
-  const enrollment = isEnrolled && enrollmentsData
-    ? enrollmentsData.enrollments?.find((e) => e.course?.id === course.id)
-    : undefined;
-  const progressPercent = enrollment?.progress?.completionPercentage ?? 0;
+  const enrollment =
+    isEnrolled && enrollmentsData
+      ? enrollmentsData.enrollments?.find(
+          (e) => e.course?.id === course.id,
+        )
+      : undefined;
+  const progressPercent =
+    enrollment?.progress?.completionPercentage ?? 0;
 
   const handleEnroll = async () => {
     if (isEnrolled) {
-      router.push(`/courses/${course.id}/lecture/${firstVideo?.id || ''}`);
+      router.push(
+        `/courses/${course.id}/lecture/${firstVideo?.id || ''}`,
+      );
       return;
     }
     try {
@@ -131,7 +140,10 @@ export default function CourseDetailPage() {
       toast.success('Enrolled successfully!');
     } catch (err) {
       const apiError = err as { data?: { message?: string } };
-      toast.error(apiError?.data?.message || 'Failed to enroll. Please try again.');
+      toast.error(
+        apiError?.data?.message ||
+          'Failed to enroll. Please try again.',
+      );
     }
   };
 
@@ -204,7 +216,9 @@ export default function CourseDetailPage() {
               </span>
               <span className="inline-flex items-center gap-2 text-sm text-[#9CA3AF]">
                 <Award className="size-4" />
-                {course.isFree ? 'Free' : `${course.price} ${course.price === 1 ? 'Coin' : 'Coins'}`}
+                {course.isFree
+                  ? 'Free'
+                  : `${course.price} ${course.price === 1 ? 'Coin' : 'Coins'}`}
               </span>
               <span className="inline-flex items-center gap-2 text-sm">
                 {hasRating ? (
@@ -441,11 +455,17 @@ export default function CourseDetailPage() {
                                     )}
                                   </div>
                                   <Button
-                                    onClick={() =>
+                                    onClick={() => {
+                                      if (!isEnrolled) {
+                                        toast.info(
+                                          'Enroll to access this course',
+                                        );
+                                        return;
+                                      }
                                       router.push(
                                         `/courses/${course.id}/lecture/${video.id}`,
-                                      )
-                                    }
+                                      );
+                                    }}
                                     className="mt-4 lg:mt-0 w-fit rounded-full bg-[#2CE6C8] text-sm font-semibold text-black hover:bg-[#2CE6C8]/90"
                                   >
                                     <Play
@@ -593,7 +613,11 @@ export default function CourseDetailPage() {
                 ) : (
                   <ShieldCheck className="mr-2 size-5 lg:size-6" />
                 )}
-                {isEnrolled ? 'Continue Learning' : isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+                {isEnrolled
+                  ? 'Continue Learning'
+                  : isEnrolling
+                    ? 'Enrolling...'
+                    : 'Enroll Now'}
               </Button>
 
               <div className="mt-6 space-y-2">
@@ -647,7 +671,7 @@ export default function CourseDetailPage() {
       </div>
 
       {/* ── STICKY PROGRESS BAR (enrolled only) ── */}
-      {isEnrolled && (
+      {/* {isEnrolled && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.08] bg-[#0B1020]/95 backdrop-blur-xl">
           <div className="mx-auto flex max-w-[1400px] items-center gap-4 lg:gap-6 px-4 lg:px-12 py-3 lg:py-4">
             <div className="flex flex-1 items-center gap-3 lg:gap-4 min-w-0">
@@ -688,7 +712,7 @@ export default function CourseDetailPage() {
             </Button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

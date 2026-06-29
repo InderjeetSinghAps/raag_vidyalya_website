@@ -17,7 +17,7 @@
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf-viewer/page-navigation": "^3.12.0",
     "@reduxjs/toolkit": "^2.12.0",
-    "@revenuecat/purchases-js": "^1.45.0",
+    "@revenuecat/purchases-js": "^1.46.0",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",
