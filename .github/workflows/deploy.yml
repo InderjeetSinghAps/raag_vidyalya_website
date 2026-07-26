@@ -27,12 +27,14 @@ jobs:
 
             cd /var/www/html/raag_vidyalya_website
 
-            git pull origin main
+            git fetch origin main
+
+            git reset --hard origin/main
 
             npm install
 
             npm run build
 
-            pm2 restart Raag-Website
+            pm2 restart Raag-Website || pm2 start npm --name "Raag-Website" -- run start
 
             pm2 save
