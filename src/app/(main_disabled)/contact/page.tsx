@@ -11,6 +11,7 @@ import {
   Camera,
   Play,
   Send,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,19 +31,35 @@ export default function ContactPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) {
-      toast.error('Please fill in all fields');
+      toast.error('Please fill in all required fields');
       return;
     }
-    toast.success(
-      "Message sent successfully! We'll get back to you soon.",
-    );
-    setName('');
-    setEmail('');
-    setMessage('');
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send query');
+
+      toast.success("Query sent successfully! We will receive your email and get back to you soon.");
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -194,10 +211,20 @@ export default function ContactPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="h-12 w-full rounded-xl bg-gradient-to-r from-[#D4A44A] to-[#C49A3A] text-sm font-semibold text-white shadow-[0_4px_20px_rgba(212,164,74,0.2)] transition-all duration-200 hover:shadow-[0_6px_24px_rgba(212,164,74,0.35)] hover:brightness-110 active:scale-[0.98]"
+                  disabled={loading}
+                  className="h-12 w-full rounded-xl bg-gradient-to-r from-[#D4A44A] to-[#C49A3A] text-sm font-semibold text-white shadow-[0_4px_20px_rgba(212,164,74,0.2)] transition-all duration-200 hover:shadow-[0_6px_24px_rgba(212,164,74,0.35)] hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
                 >
-                  <Send className="mr-2 size-4" />
-                  Send Message
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      Sending Query...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 size-4" />
+                      Send Message
+                    </>
+                  )}
                 </Button>
               </form>
             </div>
