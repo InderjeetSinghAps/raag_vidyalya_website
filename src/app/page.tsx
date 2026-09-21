@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Sparkles,
@@ -10,10 +11,15 @@ import {
   Smartphone,
   CheckCircle2,
   Lock,
+  User,
+  LogOut,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
-
 import { ContactModal } from '@/components/ContactModal';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { logout } from '@/store/authSlice';
 
 const APP_LINKS = [
   {
@@ -39,6 +45,8 @@ const FEATURES = [
 
 export default function UnderDevelopmentPage() {
   const [contactOpen, setContactOpen] = useState(false);
+  const { user, isAuthenticated } = useAppSelector((s) => s.auth);
+  const dispatch = useAppDispatch();
 
   return (
     <main className="relative flex min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
@@ -78,17 +86,58 @@ export default function UnderDevelopmentPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/notations"
+            className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-[0.96]"
+          >
+            <Music className="size-3.5" />
+            <span>Notation Studio</span>
+          </Link>
+
           <button
             onClick={() => setContactOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-[0.96]"
+            className="hidden md:flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground active:scale-[0.96]"
           >
             Contact Us
           </button>
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5 animate-pulse text-primary" />
-            <span>Mobile App Available</span>
-          </div>
+
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground">
+                <User className="size-3.5 text-primary" />
+                <span className="max-w-[120px] truncate sm:max-w-[180px]">
+                  {user.userName || user.email}
+                </span>
+              </div>
+              <button
+                onClick={() => dispatch(logout())}
+                className="flex items-center gap-1 rounded-full border border-border/80 bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="size-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-card/60 px-3.5 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-primary/10 hover:border-primary active:scale-[0.96]"
+              >
+                <LogIn className="size-3.5 text-primary" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                href="/signup"
+                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 px-3.5 py-1.5 text-xs font-semibold text-black shadow-sm transition-all hover:brightness-110 active:scale-[0.96]"
+              >
+                <UserPlus className="size-3.5" />
+                <span>Sign Up</span>
+              </Link>
+            </div>
+          )}
+
           <ThemeToggle />
         </div>
       </header>

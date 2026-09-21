@@ -12,17 +12,36 @@ const CONFIG_CACHE_KEY = 'firebase_config'
 let app: FirebaseApp | null = null
 let initPromise: Promise<FirebaseApp> | null = null
 
+export function isFirebaseConfigured(): boolean {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  return Boolean(apiKey && apiKey.trim() !== '' && projectId && projectId.trim() !== '')
+}
+
 function getCachedConfig(): Record<string, string | undefined> | null {
   try {
     const raw = localStorage.getItem(CONFIG_CACHE_KEY)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && parsed.apiKey && parsed.projectId) {
+      return parsed
+    }
+    localStorage.removeItem(CONFIG_CACHE_KEY)
+    return null
   } catch {
+    localStorage.removeItem(CONFIG_CACHE_KEY)
     return null
   }
 }
 
 function setCachedConfig(config: Record<string, string | undefined>) {
-  localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(config))
+  try {
+    if (config.apiKey && config.projectId) {
+      localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(config))
+    }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 export async function getFirebaseApp(): Promise<FirebaseApp> {
@@ -35,13 +54,23 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
       return app
     }
 
+    if (!isFirebaseConfigured()) {
+      throw new Error(
+        'Firebase is not configured. Please set NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env.local',
+      )
+    }
+
     let config = getCachedConfig()
     if (!config) {
       config = {
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        authDomain:
+          process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+          `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        storageBucket:
+          process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+          `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`,
         messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
@@ -77,11 +106,16 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
 let db: Firestore | null = null
 // let messagingInstance: Messaging | null = null
 
-export async function getFirestoreDb(): Promise<Firestore> {
+export async function getFirestoreDb(): Promise<Firestore | null> {
+  if (!isFirebaseConfigured()) return null
   if (db) return db
-  const firebaseApp = await getFirebaseApp()
-  db = getFirestore(firebaseApp)
-  return db
+  try {
+    const firebaseApp = await getFirebaseApp()
+    db = getFirestore(firebaseApp)
+    return db
+  } catch {
+    return null
+  }
 }
 
 

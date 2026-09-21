@@ -13,8 +13,22 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirect any route other than root '/' back to root '/'
-  if (pathname !== '/') {
+  const allowedPaths = [
+    '/',
+    '/login',
+    '/signup',
+    '/verify-otp',
+    '/forgot-password',
+    '/reset-password',
+  ];
+
+  // Allow /notations and its subpaths
+  if (pathname.startsWith('/notations')) {
+    return NextResponse.next();
+  }
+
+  // Redirect any route other than root, auth routes, or notations back to root '/'
+  if (!allowedPaths.includes(pathname)) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

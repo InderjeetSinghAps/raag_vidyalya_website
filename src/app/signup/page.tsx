@@ -37,7 +37,7 @@ const signupSchema = z
     email: z.string().email('Enter a valid email address'),
     password: z
       .string()
-      .min(6, 'Password must be at least 6 characters'),
+      .min(8, 'Password must be at least 8 characters'),
     confirmPassword: z
       .string()
       .min(1, 'Please confirm your password'),
@@ -96,7 +96,7 @@ export default function SignupPage() {
 
       await initRevenueCat(socialRes.user.id);
       toast.success('Successfully Logged in!');
-      router.push('/home');
+      router.push('/');
     } catch (error: unknown) {
       if (
         typeof error === 'object' &&
@@ -108,6 +108,7 @@ export default function SignupPage() {
       }
       const msg =
         (error as { data?: { message?: string } })?.data?.message ||
+        (error as Error)?.message ||
         'Google sign-up failed. Please try again.';
       toast.error(msg);
     } finally {
@@ -126,18 +127,18 @@ export default function SignupPage() {
       const deviceId = getDeviceId();
       const deviceToken = await getDeviceToken();
       const res = await signup({
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
         password: data.password,
-        userName: data.userName,
+        userName: data.userName.trim(),
         deviceType: 2,
         deviceToken,
         deviceId,
         language: 'English',
-        referralCode: data.referralCode || undefined,
+        referralCode: data.referralCode?.trim() || undefined,
       }).unwrap();
-      toast.success(res.message || 'Account created!');
+      toast.success(res.message || 'Account created! Verification code sent to email.');
       router.push(
-        `/verify-otp?email=${encodeURIComponent(data.email)}&type=1`,
+        `/verify-otp?email=${encodeURIComponent(data.email.trim().toLowerCase())}&type=1`,
       );
     } catch (error: unknown) {
       const msg =

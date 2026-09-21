@@ -31,7 +31,7 @@ import { initRevenueCat } from '@/lib/revenuecat';
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -39,7 +39,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/home';
+  const redirectTo = searchParams.get('redirectTo') || '/';
   const [login, { isLoading: isSubmitting }] = useLoginMutation();
   const [socialLogin] = useSocialLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
@@ -64,14 +64,14 @@ function LoginForm() {
     try {
       const deviceToken = await getDeviceToken();
       const res = await login({
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
         password: data.password,
         rememberMe,
         deviceToken,
-      }).unwrap()
+      }).unwrap();
       if (res.user) {
-        await initRevenueCat(res.user.id)
-        toast.success('Welcome back!');
+        await initRevenueCat(res.user.id);
+        toast.success(`Welcome back, ${res.user.userName || 'Learner'}!`);
         router.push(redirectTo);
       }
     } catch (error: unknown) {

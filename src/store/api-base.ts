@@ -411,6 +411,7 @@ export const api = createApi({
     'Collaborator',
     'Referral',
     'Subscription',
+    'Notation',
   ],
   endpoints: () => ({}),
 });

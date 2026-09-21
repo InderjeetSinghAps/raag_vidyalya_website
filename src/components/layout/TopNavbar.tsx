@@ -40,6 +40,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Home', href: '/home' },
+  { label: 'Notation Studio', href: '/notations' },
   { label: 'Courses', href: '/courses' },
   // {
   // label: 'Learn',

@@ -13,13 +13,17 @@ export const PROTECTED_ROUTES = [
   '/store/[id]',
 ];
 
-export let API_BASE_URL = '';
-export let MEDIA_BASE_URL = '';
+export let API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  'http://localhost:3000/api/v1';
+export let MEDIA_BASE_URL =
+  process.env.NEXT_PUBLIC_MEDIA_BASE_URL ||
+  'http://localhost:3000';
 export let DEVICE_TYPE = 2;
 export let IS_MOCK_AUTH = false;
 export let UPLOAD_VIDEO_URL = '';
 export let LIVE_AMRITSAR_KIRTAN_URL = '';
-export let YOUTUBE_CHANNEL_LINK = '';
+export let YOUTUBE_CHANNEL_LINK = 'https://youtube.com/@raagvidyalya';
 
 export function setConstants(data: Record<string, unknown>) {
   if (typeof data.base_url === 'string') API_BASE_URL = data.base_url;

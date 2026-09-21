@@ -36,6 +36,10 @@
   --dropdown-bg: #FFFFFF;
   --dropdown-hover: #F1F0EC;
   --dropdown-border: #E5E7EB;
+
+  --swar-low: #0284c7;
+  --swar-mid: #0f172a;
+  --swar-high: #dc2626;
 }
 
 .dark {
@@ -69,6 +73,10 @@
   --dropdown-bg: #081527;
   --dropdown-hover: #16243A;
   --dropdown-border: #16243A;
+
+  --swar-low: #38bdf8;
+  --swar-mid: #f8fafc;
+  --swar-high: #fb7185;
 }
 
 @theme inline {
