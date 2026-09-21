@@ -9,6 +9,7 @@ import { SwarKeyboard } from '@/components/notation/SwarKeyboard';
 import { NotationGrid } from '@/components/notation/NotationGrid';
 import { NotationSheetPreview } from '@/components/notation/NotationSheetPreview';
 import { NotationNavbar } from '@/components/notation/NotationNavbar';
+import { NotationAuthGuard } from '@/components/notation/NotationAuthGuard';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { toast } from 'sonner';
@@ -79,12 +80,28 @@ const RAAG_PRESETS = [
 export default function CreateNotationPage() {
   const router = useRouter();
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Taals Query
   const { data: serverTaals } = useGetTaalsQuery();
   const taalsList: Taal[] =
     serverTaals && serverTaals.length > 0 ? serverTaals : DEFAULT_TAALS;
   const [createNotation, { isLoading: isSaving }] = useCreateNotationMutation();
+
+  if (mounted && (!authUser || !isAuthenticated)) {
+    return (
+      <NotationAuthGuard
+        title="Composer Studio Sign In Required"
+        subtitle="Please sign in to compose, format, and save new Bandish notations to your personal library."
+        redirectTo="/notations/create"
+      />
+    );
+  }
 
   // Active Taal
   const [selectedTaalId, setSelectedTaalId] = useState<number>(1);

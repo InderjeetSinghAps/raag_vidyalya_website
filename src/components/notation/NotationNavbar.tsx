@@ -14,11 +14,13 @@ interface BreadcrumbItem {
 interface NotationNavbarProps {
   breadcrumbs?: BreadcrumbItem[];
   children?: React.ReactNode;
+  hideNotationsLink?: boolean;
 }
 
 export const NotationNavbar: React.FC<NotationNavbarProps> = ({
   breadcrumbs,
   children,
+  hideNotationsLink = false,
 }) => {
   return (
     <header className="no-print sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
@@ -64,16 +66,20 @@ export const NotationNavbar: React.FC<NotationNavbarProps> = ({
               <span>Home</span>
             </Link>
 
-            <span className="text-slate-300 dark:text-slate-700">/</span>
+            {!hideNotationsLink && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700">/</span>
 
-            <Link
-              href="/notations"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="My Notations Library"
-            >
-              <Music size={14} className="text-orange-500" />
-              <span>Notations</span>
-            </Link>
+                <Link
+                  href="/notations"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title="My Notations Library"
+                >
+                  <Music size={14} className="text-orange-500" />
+                  <span>Notations</span>
+                </Link>
+              </>
+            )}
 
             {breadcrumbs && breadcrumbs.length > 0 && (
               <>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   useGetMyNotationsQuery,
@@ -26,20 +26,37 @@ import {
 import { toast } from 'sonner';
 
 import { NotationNavbar } from '@/components/notation/NotationNavbar';
+import { NotationAuthGuard } from '@/components/notation/NotationAuthGuard';
 
 export default function NotationsDashboardPage() {
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [search, setSearch] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const {
     data,
     isLoading,
     refetch,
-  } = useGetMyNotationsQuery({ search });
+  } = useGetMyNotationsQuery({ search }, { skip: !authUser });
 
   const [deleteNotation, { isLoading: isDeleting }] = useDeleteNotationMutation();
 
   const notations = data?.notations || [];
+
+  if (mounted && (!authUser || !isAuthenticated)) {
+    return (
+      <NotationAuthGuard
+        title="Personal Bandish Library"
+        subtitle="Please sign in to view, create, and manage your Gurmat Sangeet and Indian Classical sheet music notations."
+        redirectTo="/notations"
+      />
+    );
+  }
 
   const handleCopyShareLink = (shareId: string) => {
     const url = `${window.location.origin}/notations/share/${shareId}`;
@@ -132,24 +149,6 @@ export default function NotationsDashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {!authUser && (
-          <div className="mb-8 p-4 sm:p-5 rounded-2xl border border-amber-300 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-950 dark:text-amber-200 text-sm shadow-sm">
-            <div className="space-y-1">
-              <span className="font-extrabold text-amber-800 dark:text-amber-300">
-                ✨ Guest Composer Mode
-              </span>
-              <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
-                You can freely create and export PDF notations as a guest! Log in to save them to your personal cloud library forever.
-              </p>
-            </div>
-            <Link
-              href="/login?redirectTo=/notations"
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold shadow-xs whitespace-nowrap active:scale-95 transition-all"
-            >
-              Sign In to Cloud
-            </Link>
-          </div>
-        )}
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

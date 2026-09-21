@@ -13,6 +13,9 @@ import { SwarKeyboard } from '@/components/notation/SwarKeyboard';
 import { NotationGrid } from '@/components/notation/NotationGrid';
 import { NotationSheetPreview } from '@/components/notation/NotationSheetPreview';
 import { NotationNavbar } from '@/components/notation/NotationNavbar';
+import { NotationAuthGuard } from '@/components/notation/NotationAuthGuard';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { toast } from 'sonner';
 import {
   Music,
@@ -26,6 +29,7 @@ import {
   Loader2,
   Sparkles,
   Wand2,
+  ShieldAlert,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -86,11 +90,21 @@ export default function EditNotationPage({ params }: PageProps) {
   const id = resolvedParams.id;
   const router = useRouter();
 
+  const authUser = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { data: serverTaals } = useGetTaalsQuery();
   const taalsList: Taal[] =
     serverTaals && serverTaals.length > 0 ? serverTaals : DEFAULT_TAALS;
 
-  const { data: notation, isLoading, error } = useGetNotationByIdQuery(id);
+  const { data: notation, isLoading, error } = useGetNotationByIdQuery(id, {
+    skip: !authUser,
+  });
   const [updateNotation, { isLoading: isUpdating }] = useUpdateNotationMutation();
 
   // Active Taal
@@ -304,6 +318,11 @@ export default function EditNotationPage({ params }: PageProps) {
       return;
     }
 
+    if (!isOwner) {
+      toast.error('You do not have permission to edit this notation');
+      return;
+    }
+
     try {
       const payload = {
         name: name.trim(),
@@ -327,12 +346,76 @@ export default function EditNotationPage({ params }: PageProps) {
     }
   };
 
+  const currentUserId = authUser?.id || (authUser as any)?._id;
+  const notationUserId =
+    typeof notation?.userId === 'object' && notation?.userId !== null
+      ? (notation.userId as any)._id || (notation.userId as any).id
+      : notation?.userId;
+
+  const isOwner = Boolean(
+    currentUserId &&
+    notationUserId &&
+    String(notationUserId) === String(currentUserId)
+  );
+
+  if (mounted && (!authUser || !isAuthenticated)) {
+    return (
+      <NotationAuthGuard
+        title="Authentication Required"
+        subtitle="Please sign in to edit your notation."
+        redirectTo={`/notations/${id}/edit`}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="animate-spin text-amber-500" size={30} />
           <p className="text-xs text-slate-500 font-bold">Loading Editor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notation && !isOwner) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+        <NotationNavbar breadcrumbs={[{ label: 'Access Denied' }]}>
+          <Link
+            href={`/notations/${id}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 active:scale-95 transition-all"
+          >
+            <ArrowLeft size={13} />
+            <span>View Notation</span>
+          </Link>
+        </NotationNavbar>
+
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center mb-5 shadow-lg">
+            <ShieldAlert size={32} />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 font-serif">
+            Access Denied
+          </h2>
+          <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+            You do not have permission to edit this notation. Only the author who composed this Bandish can modify its notes.
+          </p>
+          <div className="mt-8 flex items-center gap-3">
+            <Link
+              href={`/notations/${id}`}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
+            >
+              View Sheet Music
+            </Link>
+            <Link
+              href="/notations"
+              className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 active:scale-95 transition-all"
+            >
+              My Notations
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -355,9 +438,8 @@ export default function EditNotationPage({ params }: PageProps) {
   }
 
   const activeCellLabel = activeCell
-    ? `${sections[activeCell.sectionIndex]?.name || 'Section'} • Row ${
-        activeCell.rowIndex + 1
-      } • Matra ${activeCell.matraIndex + 1}`
+    ? `${sections[activeCell.sectionIndex]?.name || 'Section'} • Row ${activeCell.rowIndex + 1
+    } • Matra ${activeCell.matraIndex + 1}`
     : undefined;
 
   return (
@@ -374,11 +456,10 @@ export default function EditNotationPage({ params }: PageProps) {
             <button
               type="button"
               onClick={() => setActiveTab('edit')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'edit'
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'edit'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs scale-[1.02]'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               <Edit3 size={13} />
               <span>Editor</span>
@@ -386,11 +467,10 @@ export default function EditNotationPage({ params }: PageProps) {
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'preview'
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'preview'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs scale-[1.02]'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               <Eye size={13} />
               <span>Sheet PDF</span>
@@ -398,11 +478,10 @@ export default function EditNotationPage({ params }: PageProps) {
             <button
               type="button"
               onClick={() => setActiveTab('split')}
-              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'split'
+              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === 'split'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs scale-[1.02]'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               <Columns size={13} />
               <span>Split View</span>
@@ -424,9 +503,8 @@ export default function EditNotationPage({ params }: PageProps) {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <div
-          className={`grid gap-6 ${
-            activeTab === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'
-          }`}
+          className={`grid gap-6 ${activeTab === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'
+            }`}
         >
           {/* EDITOR COLUMN */}
           {(activeTab === 'edit' || activeTab === 'split') && (
@@ -572,22 +650,20 @@ export default function EditNotationPage({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={() => setActiveSheetTab('notation')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
-                    activeSheetTab === 'notation'
+                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${activeSheetTab === 'notation'
                       ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                    }`}
                 >
                   Page 1: Sheet Music Grid ({currentTaal.matras} Matras)
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveSheetTab('shabad')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
-                    activeSheetTab === 'shabad'
+                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${activeSheetTab === 'shabad'
                       ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                    }`}
                 >
                   Page 2: Gurbani Shabad / Lyrics
                 </button>

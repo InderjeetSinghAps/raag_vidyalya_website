@@ -80,6 +80,7 @@ export default function PublicShareNotationPage({ params }: PageProps) {
     <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-amber-500 selection:text-white">
       {/* Top Navbar with Home link, Breadcrumbs, Actions and ThemeToggle */}
       <NotationNavbar
+        hideNotationsLink={true}
         breadcrumbs={[
           { label: 'Public Sheet' },
           { label: notation.name },
