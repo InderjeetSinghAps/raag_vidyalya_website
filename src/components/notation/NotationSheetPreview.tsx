@@ -3,7 +3,10 @@
 import React from 'react';
 import { Taal, NotationSection, ShabadContent } from '@/types/notation';
 import { SwarDisplay } from '@/components/notation/SwarDisplay';
-import { Printer, Download, Sparkles, Music, Share2, BookOpen } from 'lucide-react';
+import { Language } from '@/lib/swarUtils';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { Printer, Download, Sparkles, Music, Share2, BookOpen, Languages } from 'lucide-react';
 
 interface NotationSheetPreviewProps {
   title: string;
@@ -17,6 +20,8 @@ interface NotationSheetPreviewProps {
   sections: NotationSection[];
   shabad?: ShabadContent;
   showPrintActions?: boolean;
+  showScriptSwitcher?: boolean;
+  language?: Language;
 }
 
 export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
@@ -31,7 +36,20 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
   sections,
   shabad,
   showPrintActions = true,
+  showScriptSwitcher = true,
+  language,
 }) => {
+  const reduxLang = useSelector((state: RootState) => state.language);
+  const [currentLang, setCurrentLang] = React.useState<Language>(
+    language || reduxLang || 'english'
+  );
+
+  React.useEffect(() => {
+    if (language) {
+      setCurrentLang(language);
+    }
+  }, [language]);
+
   const matrasCount = taal.matras || 16;
 
   // Vibhag dividers
@@ -65,32 +83,77 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Floating Action Bar */}
-      {showPrintActions && (
-        <div className="w-full max-w-4xl mb-6 flex items-center justify-between no-print bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md">
+      {/* Floating Action Bar / Script Switcher */}
+      {(showScriptSwitcher || showPrintActions) && (
+        <div className="w-full max-w-4xl mb-6 flex flex-wrap items-center justify-between gap-3 no-print bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Sparkles size={16} />
             </div>
             <div>
               <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100">
-                Print-Ready Sheet Music Preview
+                Sheet Music Publication Preview
               </span>
               <span className="block text-[11px] text-slate-400">
-                2-Page Gurmat Sangeet Publication Layout
+                Export & view in English, Hindi, or Punjabi
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md transition-all active:scale-95"
-            >
-              <Printer size={16} />
-              <span>Print / Save PDF</span>
-            </button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Script / Language Switcher */}
+            {showScriptSwitcher && (
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-inner">
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 px-2 flex items-center gap-1">
+                  <Languages size={13} className="text-amber-500" />
+                  Script:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentLang('english')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                    currentLang === 'english'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-[1.02]'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  🇬🇧 English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentLang('hindi')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                    currentLang === 'hindi'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-[1.02]'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  🇮🇳 हिंदी
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentLang('punjabi')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                    currentLang === 'punjabi'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-[1.02]'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  ੴ ਪੰਜਾਬੀ
+                </button>
+              </div>
+            )}
+
+            {showPrintActions && (
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md shadow-amber-500/20 transition-all active:scale-95"
+              >
+                <Printer size={16} />
+                <span>Print / Save PDF</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -145,19 +208,23 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-900 pt-1 font-medium">
                 {time && (
                   <div>
-                    <span className="font-extrabold text-slate-950">TIME – </span>
+                    <span className="font-extrabold text-slate-950">
+                      {currentLang === 'punjabi' ? 'ਸਮਾਂ – ' : currentLang === 'hindi' ? 'समय – ' : 'TIME – '}
+                    </span>
                     <span className="uppercase font-semibold">{time}</span>
                   </div>
                 )}
                 {aroh && (
                   <div className="sm:col-span-2">
-                    <span className="font-extrabold text-slate-950">AROH – </span>
+                    <span className="font-extrabold text-slate-950">
+                      {currentLang === 'punjabi' ? 'ਆਰੋਹ – ' : currentLang === 'hindi' ? 'आरोह – ' : 'AROH – '}
+                    </span>
                     <span className="font-mono font-bold tracking-wide">
                       {aroh.split(/([,\s]+)/).map((seg, i) =>
                         !seg.trim() || seg === ',' ? (
                           seg
                         ) : (
-                          <SwarDisplay key={i} value={seg} isDarkMode={false} />
+                          <SwarDisplay key={i} value={seg} isDarkMode={false} language={currentLang} />
                         )
                       )}
                     </span>
@@ -165,13 +232,15 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
                 )}
                 {avroh && (
                   <div className="sm:col-span-2">
-                    <span className="font-extrabold text-slate-950">AVROH – </span>
+                    <span className="font-extrabold text-slate-950">
+                      {currentLang === 'punjabi' ? 'ਅਵਰੋਹ – ' : currentLang === 'hindi' ? 'अवरोह – ' : 'AVROH – '}
+                    </span>
                     <span className="font-mono font-bold tracking-wide">
                       {avroh.split(/([,\s]+)/).map((seg, i) =>
                         !seg.trim() || seg === ',' ? (
                           seg
                         ) : (
-                          <SwarDisplay key={i} value={seg} isDarkMode={false} />
+                          <SwarDisplay key={i} value={seg} isDarkMode={false} language={currentLang} />
                         )
                       )}
                     </span>
@@ -179,14 +248,22 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
                 )}
                 {vaadi && (
                   <div>
-                    <span className="font-extrabold text-slate-950">VAADI – </span>
-                    <span className="font-bold">{vaadi}</span>
+                    <span className="font-extrabold text-slate-950">
+                      {currentLang === 'punjabi' ? 'ਵਾਦੀ – ' : currentLang === 'hindi' ? 'वादी – ' : 'VAADI – '}
+                    </span>
+                    <span className="font-bold">
+                      <SwarDisplay value={vaadi} isDarkMode={false} language={currentLang} />
+                    </span>
                   </div>
                 )}
                 {samvaadi && (
                   <div>
-                    <span className="font-extrabold text-slate-950">SAMVAADI – </span>
-                    <span className="font-bold">{samvaadi}</span>
+                    <span className="font-extrabold text-slate-950">
+                      {currentLang === 'punjabi' ? 'ਸੰਵਾਦੀ – ' : currentLang === 'hindi' ? 'संवादी – ' : 'SAMVAADI – '}
+                    </span>
+                    <span className="font-bold">
+                      <SwarDisplay value={samvaadi} isDarkMode={false} language={currentLang} />
+                    </span>
                   </div>
                 )}
               </div>
@@ -196,23 +273,29 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
             <div className="flex flex-col items-start sm:items-end text-xs space-y-2.5">
               <div className="bg-slate-50 border-2 border-slate-800 rounded-xl px-3.5 py-2 shadow-xs">
                 <span className="font-black text-slate-900 block mb-0.5 text-[10px] uppercase tracking-widest text-center sm:text-right">
-                  OCTAVES
+                  {currentLang === 'punjabi' ? 'ਸਪਤਕ' : currentLang === 'hindi' ? 'सप्तक' : 'OCTAVES'}
                 </span>
                 <div className="flex items-center gap-2 font-black text-xs">
-                  <span style={{ color: '#0284c7' }} className="px-1.5 py-0.5 rounded bg-sky-50">LOW</span>
+                  <span style={{ color: '#0284c7' }} className="px-1.5 py-0.5 rounded bg-sky-50">
+                    {currentLang === 'punjabi' ? 'ਮੰਦਰ' : currentLang === 'hindi' ? 'मंद्र' : 'LOW'}
+                  </span>
                   <span className="text-slate-300">/</span>
-                  <span style={{ color: '#000000' }} className="px-1.5 py-0.5 rounded bg-slate-100">MID</span>
+                  <span style={{ color: '#000000' }} className="px-1.5 py-0.5 rounded bg-slate-100">
+                    {currentLang === 'punjabi' ? 'ਮੱਧ' : currentLang === 'hindi' ? 'मध्य' : 'MID'}
+                  </span>
                   <span className="text-slate-300">/</span>
-                  <span style={{ color: '#dc2626' }} className="px-1.5 py-0.5 rounded bg-red-50">HIGH</span>
+                  <span style={{ color: '#dc2626' }} className="px-1.5 py-0.5 rounded bg-red-50">
+                    {currentLang === 'punjabi' ? 'ਤਾਰ' : currentLang === 'hindi' ? 'तार' : 'HIGH'}
+                  </span>
                 </div>
               </div>
 
               <div className="text-left sm:text-right">
                 <div className="font-black text-base uppercase text-slate-950 tracking-wider">
-                  {taal.name?.english || 'TAAL'}
+                  {taal.name?.[currentLang] || taal.name?.english || 'TAAL'}
                 </div>
                 <div className="text-[11px] text-slate-700 font-mono font-bold">
-                  {matrasCount} Matras ({taal.vibhag?.join(' | ')})
+                  {matrasCount} {currentLang === 'punjabi' ? 'ਮਾਤਰਾ' : currentLang === 'hindi' ? 'मात्रा' : 'Matras'} ({taal.vibhag?.join(' | ')})
                 </div>
               </div>
             </div>
@@ -227,10 +310,10 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
               {/* Theka Bols row */}
               <tr className="border-t-2 border-b border-slate-900 bg-slate-100/90 text-slate-950">
                 <th className="w-16 px-1.5 py-2 text-left text-[11px] font-black uppercase tracking-wider border-r-2 border-slate-900 font-mono">
-                  Theka
+                  {currentLang === 'punjabi' ? 'ਠੇਕਾ' : currentLang === 'hindi' ? 'ठेका' : 'Theka'}
                 </th>
                 {Array.from({ length: matrasCount }).map((_, mIdx) => {
-                  const bol = taal.bol?.[mIdx]?.english || '';
+                  const bol = (taal.bol?.[mIdx] && taal.bol[mIdx][currentLang]) || taal.bol?.[mIdx]?.english || '';
                   const isVibhagEnd = vibhagEndIndices.includes(mIdx);
                   return (
                     <th
@@ -250,7 +333,7 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
               {/* Matra Numbers & Taali/Khali */}
               <tr className="border-b-2 border-slate-900 bg-slate-50 text-slate-800">
                 <th className="px-1.5 py-1 text-left text-[10px] font-bold border-r-2 border-slate-900 font-mono">
-                  Matra
+                  {currentLang === 'punjabi' ? 'ਮਾਤਰਾ' : currentLang === 'hindi' ? 'मात्रा' : 'Matra'}
                 </th>
                 {Array.from({ length: matrasCount }).map((_, mIdx) => {
                   const isVibhagEnd = vibhagEndIndices.includes(mIdx);
@@ -304,7 +387,7 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
                       {/* Swar row */}
                       <tr className="border-b border-slate-200">
                         <td className="px-1.5 py-2 text-left text-[11px] font-bold text-slate-700 border-r-2 border-slate-900 bg-slate-50">
-                          Swar
+                          {currentLang === 'punjabi' ? 'ਸਵਰ' : currentLang === 'hindi' ? 'स्वर' : 'Swar'}
                         </td>
                         {Array.from({ length: matrasCount }).map((_, mIdx) => {
                           const swarVal = row.swars?.[mIdx] || '';
@@ -319,7 +402,7 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
                                   : 'border-r border-slate-300'
                               }`}
                             >
-                              <SwarDisplay value={swarVal} isDarkMode={false} emptyPlaceholder="—" />
+                              <SwarDisplay value={swarVal} isDarkMode={false} emptyPlaceholder="—" language={currentLang} />
                             </td>
                           );
                         })}
@@ -328,7 +411,7 @@ export const NotationSheetPreview: React.FC<NotationSheetPreviewProps> = ({
                       {/* Lyric row */}
                       <tr className="border-b-2 border-slate-900 bg-slate-50/30">
                         <td className="px-1.5 py-2 text-left text-[11px] font-bold text-slate-700 border-r-2 border-slate-900 bg-slate-50">
-                          Bol
+                          {currentLang === 'punjabi' ? 'ਬੋਲ' : currentLang === 'hindi' ? 'बोल' : 'Bol'}
                         </td>
                         {Array.from({ length: matrasCount }).map((_, mIdx) => {
                           const lyricVal = row.lyrics?.[mIdx] || '';

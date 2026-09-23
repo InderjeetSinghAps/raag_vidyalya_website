@@ -1,7 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Octave, getOctaveColor } from '@/lib/swarUtils';
+import {
+  Octave,
+  Language,
+  Sur,
+  getOctaveColor,
+  parseSwar,
+  getSurFromNote,
+  getSurSymbol,
+  PUNJABI_SUR_MAP,
+  HINDI_SUR_MAP,
+  ENGLISH_SUR_MAP,
+} from '@/lib/swarUtils';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 export interface SwarPart {
   text: string;
@@ -10,10 +23,11 @@ export interface SwarPart {
   octave: Octave;
   isKan: boolean;
   isSustain: boolean;
+  sur?: Sur;
 }
 
 /**
- * Tokenizes and parses a Swar string (handles single swar, compound swars, grace notes, etc.)
+ * Tokenizes and parses a Swar string (handles English, Hindi, Punjabi, compound swars, grace notes, etc.)
  */
 export function parseSwarPhrase(input: string): SwarPart[] {
   const trimmed = (input || '').trim();
@@ -32,81 +46,38 @@ export function parseSwarPhrase(input: string): SwarPart[] {
     ];
   }
 
-  // Tokenize swar components (grace note e.g. (P), or note token like D_, M', S., S', R, etc.)
+  // Tokenize swar components (grace note e.g. (P), or note token like D_, M', S., S', R, ਰੁ, रे॒, etc.)
   const tokenRegex =
-    /(\([A-Za-z0-9_.'#]+\)|[A-Za-z](?:_)?(?:['#*.\u0307\u0323\u0331])?|[-—–])/g;
+    /(\([A-Za-z0-9_.'#\u0900-\u097F\u0A00-\u0A7F]+\)|(?:[A-Za-z\u0900-\u097F\u0A00-\u0A7F]+)(?:_)?(?:['#*.\u0307\u0323\u0331\u0951\u0952])?|[-—–])/g;
   const matches = trimmed.match(tokenRegex);
 
   if (!matches || matches.length === 0) {
-    return [parseIndividualSwar(trimmed)];
+    const single = parseSwar(trimmed);
+    return [
+      {
+        text: single.note,
+        isKomal: single.isKomal,
+        isTeevra: single.isTeevra,
+        octave: single.octave,
+        isKan: single.isKan,
+        isSustain: single.isSustain,
+        sur: single.sur,
+      },
+    ];
   }
 
-  return matches.map((m) => parseIndividualSwar(m));
-}
-
-function parseIndividualSwar(rawToken: string): SwarPart {
-  let text = rawToken.trim();
-  let isKan = false;
-  let octave: Octave = 'mid';
-  let isKomal = false;
-  let isTeevra = false;
-
-  if (text === '-' || text === '—' || text === '–') {
+  return matches.map((m) => {
+    const single = parseSwar(m);
     return {
-      text: '—',
-      isKomal: false,
-      isTeevra: false,
-      octave: 'mid',
-      isKan: false,
-      isSustain: true,
+      text: single.note,
+      isKomal: single.isKomal,
+      isTeevra: single.isTeevra,
+      octave: single.octave,
+      isKan: single.isKan,
+      isSustain: single.isSustain,
+      sur: single.sur,
     };
-  }
-
-  // Check grace note e.g. (P)
-  if (text.startsWith('(') && text.endsWith(')')) {
-    isKan = true;
-    text = text.slice(1, -1);
-  }
-
-  // Check octave marks
-  if (text.includes('.') || text.includes('\u0323') || text.toLowerCase().startsWith('l:')) {
-    octave = 'low';
-    text = text.replace(/l:/gi, '').replace(/\./g, '').replace(/\u0323/g, '');
-  } else if (
-    (text.endsWith("'") && !text.toUpperCase().startsWith('M')) ||
-    text.endsWith('"') ||
-    text.includes('*') ||
-    text.includes('^') ||
-    text.includes('\u0307') ||
-    text.toLowerCase().startsWith('h:')
-  ) {
-    octave = 'high';
-    text = text.replace(/h:/gi, '').replace(/[*^"'\u0307]/g, '');
-  }
-
-  // Komal & Teevra detection
-  if (text.toUpperCase() === "M'" || text === "M#" || text === "m'" || text === "M\u0301") {
-    isTeevra = true;
-    text = 'M';
-  } else if (text.includes('_') || text.includes('\u0331')) {
-    isKomal = true;
-    text = text.replace(/[_|\u0331]/g, '').toUpperCase();
-  } else if (['r', 'g', 'd', 'n'].includes(text)) {
-    // Lowercase notation convention for komal notes
-    isKomal = true;
-    text = text.toUpperCase();
-  } else {
-    text = text.toUpperCase();
-  }
-
-  return {
-    text,
-    isKomal,
-    isTeevra,
-    octave,
-    isKan,
-    isSustain: false,
-  };
+  });
 }
 
 interface SwarDisplayProps {
@@ -114,12 +85,15 @@ interface SwarDisplayProps {
   isDarkMode?: boolean;
   className?: string;
   emptyPlaceholder?: React.ReactNode;
+  language?: Language;
 }
 
 /**
- * High-precision Indian Classical / Bhatkhande Swar visual renderer.
- * Formats Komal notes with exact horizontal underline directly beneath the letter (NO underscore character).
- * Formats Teevra Ma as M'.
+ * High-precision Indian Classical & Gurmat Sangeet Swar visual renderer.
+ * Supports:
+ * - English (Bhatkhande: Sa, Re, Ga, Ma', Pa, Dha, Ni with underlines for komal)
+ * - Hindi (Devanagari: स, रे॒, रे, ग॒, ग, म, म॑, प, ध॒, ध, नि॒, नि)
+ * - Punjabi (Gurmukhi: ਸ, ਰੁ, ਰ, ਗੁ, ਗ, ਮ, ਮੇ, ਪ, ਧੁ, ਧ, ਨੁ, ਨ)
  * Formats Mandra (Low) in Cyan and Taar (High) in Red.
  */
 export const SwarDisplay: React.FC<SwarDisplayProps> = ({
@@ -127,7 +101,11 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
   isDarkMode = false,
   className = '',
   emptyPlaceholder = '—',
+  language,
 }) => {
+  const reduxLang = useSelector((state: RootState) => state.language);
+  const activeLang: Language = language || reduxLang || 'english';
+
   const trimmed = (value || '').trim();
 
   if (!trimmed) {
@@ -159,6 +137,39 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
           );
         }
 
+        const sur = p.sur || getSurFromNote(p.text, p.isKomal, p.isTeevra);
+
+        // Language-specific note rendering
+        let displayContent: React.ReactNode = p.text;
+
+        if (activeLang === 'punjabi' && sur) {
+          displayContent = PUNJABI_SUR_MAP[sur];
+        } else if (activeLang === 'hindi' && sur) {
+          displayContent = HINDI_SUR_MAP[sur];
+        } else if (activeLang === 'english') {
+          // English Bhatkhande notation with underline for Komal
+          const baseLetter = sur
+            ? (p.isTeevra ? "M'" : p.isKomal ? ENGLISH_SUR_MAP[sur] : ENGLISH_SUR_MAP[sur])
+            : p.isTeevra ? "M'" : p.text;
+
+          displayContent = p.isKomal ? (
+            <span className="inline-block border-b-2 border-current pb-[1.5px] leading-none font-black">
+              {baseLetter}
+            </span>
+          ) : (
+            <span className="leading-none font-black">{baseLetter}</span>
+          );
+        } else {
+          // Fallback
+          displayContent = p.isKomal ? (
+            <span className="inline-block border-b-2 border-current pb-[1.5px] leading-none font-black">
+              {p.text}
+            </span>
+          ) : (
+            <span className="leading-none font-black">{p.text}</span>
+          );
+        }
+
         if (p.isKan) {
           return (
             <span
@@ -166,13 +177,13 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
               className="text-[10px] font-bold opacity-80 align-super"
               style={{ color }}
             >
-              ({p.text})
+              ({displayContent})
             </span>
           );
         }
 
         const isHigh = p.octave === 'high';
-        const displayLetter = p.isTeevra ? "M'" : p.text;
+        const isLow = p.octave === 'low';
 
         return (
           <span
@@ -180,17 +191,19 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
             className="inline-flex items-baseline relative"
             style={{ color }}
           >
-            {p.isKomal ? (
-              <span className="inline-block border-b-2 border-current pb-[1.5px] leading-none font-black">
-                {displayLetter}
-              </span>
-            ) : (
-              <span className="leading-none font-black">{displayLetter}</span>
-            )}
+            {displayContent}
 
-            {isHigh && !p.isTeevra && (
+            {/* High Octave Acute/Dot mark */}
+            {isHigh && (
               <span className="text-[10px] leading-none align-super font-black ml-0.5">
                 &apos;
+              </span>
+            )}
+
+            {/* Low Octave Dot mark */}
+            {isLow && (
+              <span className="text-[11px] leading-none align-sub font-black ml-0.5">
+                .
               </span>
             )}
           </span>

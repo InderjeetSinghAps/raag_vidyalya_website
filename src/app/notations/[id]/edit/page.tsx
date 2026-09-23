@@ -14,8 +14,14 @@ import { NotationGrid } from '@/components/notation/NotationGrid';
 import { NotationSheetPreview } from '@/components/notation/NotationSheetPreview';
 import { NotationNavbar } from '@/components/notation/NotationNavbar';
 import { NotationAuthGuard } from '@/components/notation/NotationAuthGuard';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { setLanguage, Language } from '@/store/languageSlice';
+import {
+  mapPhysicalKeyToSwar,
+  formatPhraseToLanguage,
+  formatSwarToLanguage,
+} from '@/lib/swarUtils';
 import { toast } from 'sonner';
 import {
   Music,
@@ -28,58 +34,11 @@ import {
   Trash2,
   Loader2,
   Sparkles,
-  Wand2,
   ShieldAlert,
+  Languages,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
-
-const RAAG_PRESETS = [
-  {
-    name: 'Bhupali',
-    raag: 'Raag Bhupali',
-    time: 'SUN SET / FIRST PART OF NIGHT',
-    aroh: "S R, M' P, N S",
-    avroh: "S N D P, M' G, R S",
-    vaadi: 'R',
-    samvaadi: 'P',
-  },
-  {
-    name: 'Yaman',
-    raag: 'Raag Yaman',
-    time: 'NIGHT (1ST PAHAR)',
-    aroh: "N. R G M' D N S'",
-    avroh: "S' N D P M' G R S",
-    vaadi: 'G',
-    samvaadi: 'N',
-  },
-  {
-    name: 'Bilawal',
-    raag: 'Raag Bilawal',
-    time: 'MORNING (1ST PAHAR)',
-    aroh: "S R G M P D N S'",
-    avroh: "S' N D P M G R S",
-    vaadi: 'D',
-    samvaadi: 'G',
-  },
-  {
-    name: 'Bairagi',
-    raag: 'Raag Bairagi',
-    time: 'EARLY MORNING',
-    aroh: "S r M P n S'",
-    avroh: "S' n P M r S",
-    vaadi: 'M',
-    samvaadi: 'S',
-  },
-  {
-    name: 'Kafi',
-    raag: 'Raag Kafi',
-    time: 'LATE EVENING',
-    aroh: "S R g M P D n S'",
-    avroh: "S' n D P M g R S",
-    vaadi: 'P',
-    samvaadi: 'R',
-  },
-];
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -89,6 +48,8 @@ export default function EditNotationPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const router = useRouter();
+  const dispatch = useDispatch();
+  const currentLanguage = useSelector((state: RootState) => state.language);
 
   const authUser = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
@@ -183,15 +144,67 @@ export default function EditNotationPage({ params }: PageProps) {
     }
   }, [notation]);
 
-  const applyPreset = (preset: typeof RAAG_PRESETS[0]) => {
-    setName(preset.name.toUpperCase());
-    setRaag(preset.raag);
-    setTime(preset.time);
-    setAroh(preset.aroh);
-    setAvroh(preset.avroh);
-    setVaadi(preset.vaadi);
-    setSamvaadi(preset.samvaadi);
-    toast.success(`Applied ${preset.name} parameters!`);
+  // Physical Keyboard Handlers for Classical Notation Fields (Task 2)
+  const handleKeyDownVaadi = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    const swar = mapPhysicalKeyToSwar(e.key, e.shiftKey);
+    if (swar) {
+      e.preventDefault();
+      setVaadi(swar);
+    }
+  };
+
+  const handleKeyDownSamvaadi = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    const swar = mapPhysicalKeyToSwar(e.key, e.shiftKey);
+    if (swar) {
+      e.preventDefault();
+      setSamvaadi(swar);
+    }
+  };
+
+  const handleKeyDownPhrase = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    getter: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    if (['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', ' ', ','].includes(e.key)) return;
+    const swar = mapPhysicalKeyToSwar(e.key, e.shiftKey);
+    if (swar) {
+      e.preventDefault();
+      const input = e.currentTarget;
+      const start = input.selectionStart ?? getter.length;
+      const end = input.selectionEnd ?? getter.length;
+      const before = getter.substring(0, start);
+      const after = getter.substring(end);
+      const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
+      const inserted = (needsSpace ? ' ' : '') + swar + ' ';
+      const nextVal = before + inserted + after;
+      setter(nextVal);
+      const newPos = start + inserted.length;
+      setTimeout(() => {
+        input.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+  };
+
+  // Convert all notation notes to target script (English, Hindi, Punjabi)
+  const convertNotationToScript = (targetLang: Language) => {
+    setVaadi((prev) => formatSwarToLanguage(prev, targetLang));
+    setSamvaadi((prev) => formatSwarToLanguage(prev, targetLang));
+    setAroh((prev) => formatPhraseToLanguage(prev, targetLang));
+    setAvroh((prev) => formatPhraseToLanguage(prev, targetLang));
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        rows: sec.rows.map((row) => ({
+          ...row,
+          swars: row.swars.map((sw) => formatSwarToLanguage(sw, targetLang)),
+        })),
+      }))
+    );
+    dispatch(setLanguage(targetLang));
+    toast.success(`Converted notation to ${targetLang.toUpperCase()} script!`);
   };
 
   const handleTaalChange = (newTaalId: number) => {
@@ -745,21 +758,57 @@ export default function EditNotationPage({ params }: PageProps) {
                   </div>
                 </div>
 
-                {/* Presets */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-[11px] font-bold text-slate-400 mr-1 flex items-center gap-1">
-                    <Wand2 size={12} className="text-amber-500" /> Presets:
-                  </span>
-                  {RAAG_PRESETS.map((p) => (
-                    <button
-                      key={p.name}
-                      type="button"
-                      onClick={() => applyPreset(p)}
-                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all active:scale-95"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+                {/* Script Switcher & Sheet Port Tool (Task 3) */}
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      <Languages size={13} className="text-amber-500" /> Script:
+                    </span>
+                    <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => dispatch(setLanguage('english'))}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                          currentLanguage === 'english'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        🇬🇧 English
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch(setLanguage('hindi'))}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                          currentLanguage === 'hindi'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        🇮🇳 हिंदी
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch(setLanguage('punjabi'))}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                          currentLanguage === 'punjabi'
+                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        ੴ ਪੰਜਾਬੀ
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => convertNotationToScript(currentLanguage)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-all active:scale-95 shadow-2xs"
+                    title="Convert all current sheet notes and phrases to the selected script"
+                  >
+                    <RefreshCw size={12} /> Convert Sheet Notes to {currentLanguage.toUpperCase()}
+                  </button>
                 </div>
 
                 {/* Metadata Fields */}
@@ -828,6 +877,7 @@ export default function EditNotationPage({ params }: PageProps) {
                           setActiveInputTarget('vaadi');
                           setKeyboardCollapsed(false);
                         }}
+                        onKeyDown={handleKeyDownVaadi}
                         onChange={(e) => setVaadi(e.target.value)}
                         placeholder="V: R"
                         className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
@@ -848,6 +898,7 @@ export default function EditNotationPage({ params }: PageProps) {
                           setActiveInputTarget('samvaadi');
                           setKeyboardCollapsed(false);
                         }}
+                        onKeyDown={handleKeyDownSamvaadi}
                         onChange={(e) => setSamvaadi(e.target.value)}
                         placeholder="S: P"
                         className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
@@ -883,6 +934,7 @@ export default function EditNotationPage({ params }: PageProps) {
                         setActiveInputTarget('aroh');
                         setKeyboardCollapsed(false);
                       }}
+                      onKeyDown={(e) => handleKeyDownPhrase(e, aroh, setAroh)}
                       onChange={(e) => setAroh(e.target.value)}
                       placeholder="S R, M' P, N S"
                       className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
@@ -917,6 +969,7 @@ export default function EditNotationPage({ params }: PageProps) {
                         setActiveInputTarget('avroh');
                         setKeyboardCollapsed(false);
                       }}
+                      onKeyDown={(e) => handleKeyDownPhrase(e, avroh, setAvroh)}
                       onChange={(e) => setAvroh(e.target.value)}
                       placeholder="S N D P, M' G, R S"
                       className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
@@ -964,6 +1017,7 @@ export default function EditNotationPage({ params }: PageProps) {
                     setActiveInputTarget('grid');
                     setActiveCell({ sectionIndex: sIdx, rowIndex: rIdx, matraIndex: mIdx });
                   }}
+                  language={currentLanguage}
                 />
               )}
 
@@ -1085,6 +1139,7 @@ export default function EditNotationPage({ params }: PageProps) {
                 sections={sections}
                 shabad={shabad}
                 showPrintActions={true}
+                language={currentLanguage}
               />
             </div>
           )}

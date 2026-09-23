@@ -3,6 +3,7 @@
 import React from 'react';
 import { Taal, NotationSection, NotationRow } from '@/types/notation';
 import { SwarDisplay } from '@/components/notation/SwarDisplay';
+import { mapPhysicalKeyToSwar, Language } from '@/lib/swarUtils';
 import { useTheme } from 'next-themes';
 import {
   Plus,
@@ -21,6 +22,7 @@ interface NotationGridProps {
   activeCell: { sectionIndex: number; rowIndex: number; matraIndex: number } | null;
   onCellFocus: (sectionIndex: number, rowIndex: number, matraIndex: number) => void;
   readOnly?: boolean;
+  language?: Language;
 }
 
 export const NotationGrid: React.FC<NotationGridProps> = ({
@@ -30,6 +32,7 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
   activeCell,
   onCellFocus,
   readOnly = false,
+  language,
 }) => {
   const matrasCount = taal.matras || 16;
   const { theme, resolvedTheme } = useTheme();
@@ -323,7 +326,10 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                     Theka
                   </th>
                   {Array.from({ length: matrasCount }).map((_, mIdx) => {
-                    const bol = taal.bol?.[mIdx]?.english || '';
+                    const bol =
+                      (language && taal.bol?.[mIdx]?.[language]) ||
+                      taal.bol?.[mIdx]?.english ||
+                      '';
                     const isVibhagEnd = vibhagEndIndices.includes(mIdx);
 
                     return (
@@ -377,7 +383,7 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                           >
                             {readOnly ? (
                               <div className="py-2 px-1 font-black font-mono text-sm sm:text-base text-center tracking-wide flex items-center justify-center min-h-[38px]">
-                                <SwarDisplay value={swarVal} isDarkMode={isDark} emptyPlaceholder="•" />
+                                <SwarDisplay value={swarVal} language={language} isDarkMode={isDark} emptyPlaceholder="•" />
                               </div>
                             ) : isFocused ? (
                               <input
@@ -385,6 +391,30 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                                 value={swarVal}
                                 autoFocus
                                 onFocus={() => onCellFocus(sIdx, rIdx, mIdx)}
+                                onKeyDown={(e) => {
+                                  // Let standard navigation keys pass through
+                                  if (['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                                    return;
+                                  }
+                                  if (e.key === 'Backspace' || e.key === 'Delete') {
+                                    e.preventDefault();
+                                    updateSwar(sIdx, rIdx, mIdx, '');
+                                    return;
+                                  }
+                                  const mapped = mapPhysicalKeyToSwar(e.key, e.shiftKey);
+                                  if (mapped) {
+                                    e.preventDefault();
+                                    updateSwar(sIdx, rIdx, mIdx, mapped);
+                                    // Advance to next matra box
+                                    if (mIdx < matrasCount - 1) {
+                                      onCellFocus(sIdx, rIdx, mIdx + 1);
+                                    } else if (rIdx < section.rows.length - 1) {
+                                      onCellFocus(sIdx, rIdx + 1, 0);
+                                    } else if (sIdx < sections.length - 1) {
+                                      onCellFocus(sIdx + 1, 0, 0);
+                                    }
+                                  }
+                                }}
                                 onChange={(e) =>
                                   updateSwar(sIdx, rIdx, mIdx, e.target.value)
                                 }
@@ -398,7 +428,7 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                                 className="w-full py-2 px-1 font-black font-mono text-center text-sm sm:text-base rounded-xl transition-all duration-150 bg-transparent hover:bg-slate-100/80 dark:hover:bg-slate-800/60 flex items-center justify-center cursor-pointer min-h-[38px]"
                                 title="Click to edit matra"
                               >
-                                <SwarDisplay value={swarVal} isDarkMode={isDark} emptyPlaceholder="—" />
+                                <SwarDisplay value={swarVal} language={language} isDarkMode={isDark} emptyPlaceholder="—" />
                               </button>
                             )}
                           </td>
