@@ -24,6 +24,87 @@ interface SwarKeyboardProps {
   onToggleCollapse?: () => void;
 }
 
+interface SwarKeyDef {
+  swarBase: string;
+  isKomal?: boolean;
+  isTeevra?: boolean;
+  label: string;
+  punjabi?: string;
+}
+
+const SWAR_KEYS: SwarKeyDef[] = [
+  { swarBase: 'S', label: 'Sa', punjabi: 'ਸਾ' },
+  { swarBase: 'R', isKomal: true, label: 'Komal Re' },
+  { swarBase: 'R', label: 'Re', punjabi: 'ਰੇ' },
+  { swarBase: 'G', isKomal: true, label: 'Komal Ga' },
+  { swarBase: 'G', label: 'Ga', punjabi: 'ਗਾ' },
+  { swarBase: 'M', label: 'Ma', punjabi: 'ਮਾ' },
+  { swarBase: 'M', isTeevra: true, label: 'Teevra Ma' },
+  { swarBase: 'P', label: 'Pa', punjabi: 'ਪਾ' },
+  { swarBase: 'D', isKomal: true, label: 'Komal Dha' },
+  { swarBase: 'D', label: 'Dha', punjabi: 'ਧਾ' },
+  { swarBase: 'N', isKomal: true, label: 'Komal Ni' },
+  { swarBase: 'N', label: 'Ni', punjabi: 'ਨੀ' },
+];
+
+function getSwarSymbol(key: SwarKeyDef, octave: Octave) {
+  if (key.isTeevra) {
+    if (octave === 'low') return "M'.";
+    if (octave === 'high') return "M''";
+    return "M'";
+  }
+
+  const base = key.swarBase;
+  if (octave === 'low') return `${base}.`;
+  if (octave === 'high') return `${base}'`;
+  return base;
+}
+
+function getSwarSubtitle(key: SwarKeyDef) {
+  if (key.punjabi) {
+    return `${key.label} • ${key.punjabi}`;
+  }
+  return key.label;
+}
+
+function getKeyClasses(key: SwarKeyDef, octave: Octave) {
+  const isKomal = key.isKomal;
+
+  if (octave === 'low') {
+    return {
+      button: `group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none ${
+        isKomal
+          ? 'border-2 border-dashed border-cyan-400 dark:border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50/90 to-cyan-100/60 dark:from-cyan-950/50 dark:to-cyan-900/40 shadow-[0_3px_0_rgba(6,182,212,0.3)] hover:border-cyan-500 hover:brightness-105'
+          : 'border-2 border-solid border-cyan-400 dark:border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30 shadow-[0_3px_0_rgba(6,182,212,0.3)] hover:border-cyan-500 hover:brightness-105'
+      }`,
+      subtitle:
+        'text-cyan-600/80 dark:text-cyan-400/80 group-hover:text-cyan-700 dark:group-hover:text-cyan-200',
+    };
+  }
+
+  if (octave === 'high') {
+    return {
+      button: `group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none ${
+        isKomal
+          ? 'border-2 border-dashed border-rose-400 dark:border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50/90 to-rose-100/60 dark:from-rose-950/50 dark:to-rose-900/40 shadow-[0_3px_0_rgba(244,63,94,0.3)] hover:border-rose-500 hover:brightness-105'
+          : 'border-2 border-solid border-rose-400 dark:border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30 shadow-[0_3px_0_rgba(244,63,94,0.3)] hover:border-rose-500 hover:brightness-105'
+      }`,
+      subtitle:
+        'text-rose-600/80 dark:text-rose-400/80 group-hover:text-rose-700 dark:group-hover:text-rose-200',
+    };
+  }
+
+  // mid / madhya
+  return {
+    button: `group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none ${
+      isKomal
+        ? 'border-2 border-dashed border-slate-400 dark:border-slate-600 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-slate-50 to-slate-100/70 dark:from-slate-800/90 dark:to-slate-900 shadow-[0_3px_0_rgba(0,0,0,0.12)] hover:border-amber-400'
+        : 'border-2 border-solid border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 shadow-[0_3px_0_rgba(0,0,0,0.12)] hover:border-amber-400'
+    }`,
+    subtitle: 'text-slate-500 dark:text-slate-400 group-hover:text-amber-500',
+  };
+}
+
 export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
   onInsertSwar,
   onBackspace,
@@ -66,8 +147,16 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 transition-all duration-300">
-      {/* Top glowing gradient border accent */}
-      <div className="h-[2.5px] w-full bg-gradient-to-r from-cyan-500 via-amber-500 to-rose-500 shadow-md" />
+      {/* Top glowing gradient border accent synced with selected octave */}
+      <div
+        className={`h-[2.5px] w-full transition-all duration-300 ${
+          octave === 'low'
+            ? 'bg-gradient-to-r from-cyan-400 via-sky-400 to-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.8)]'
+            : octave === 'high'
+            ? 'bg-gradient-to-r from-rose-400 via-red-400 to-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]'
+            : 'bg-gradient-to-r from-slate-400 via-amber-500 to-slate-400 dark:from-slate-600 dark:via-amber-500/80 dark:to-slate-600 shadow-xs'
+        }`}
+      />
 
       {/* Frosted glass backdrop */}
       <div className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-10px_35px_-5px_rgba(0,0,0,0.15)]">
@@ -80,6 +169,19 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
               </span>
               <span>Swar Keyboard</span>
             </div>
+
+            {/* Active Octave Badge */}
+            <span
+              className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-all ${
+                octave === 'low'
+                  ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/70 dark:text-cyan-300 border border-cyan-300/80 dark:border-cyan-800/80'
+                  : octave === 'high'
+                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300/80 dark:border-rose-800/80'
+                  : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              {octave === 'low' ? '🔵 Mandra' : octave === 'high' ? '🔴 Taar' : '⚫ Madhya'}
+            </span>
 
             {activeCellLabel && (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 font-mono text-[11px] font-medium animate-pulse">
@@ -145,7 +247,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                   onClick={() => setOctave('mid')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
                     octave === 'mid'
-                      ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.4)] scale-[1.03]'
+                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 shadow-[0_0_14px_rgba(0,0,0,0.3)] scale-[1.03]'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50'
                   }`}
                 >
@@ -216,199 +318,33 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
 
             {/* 3D Tactile Piano/Harmonium Swar Keys */}
             <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 sm:gap-2">
-              {/* Suddha Sa */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('S')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "S'" : octave === 'low' ? 'S.' : 'S'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Sa • ਸਾ
-                </span>
-              </button>
+              {SWAR_KEYS.map((key) => {
+                const style = getKeyClasses(key, octave);
+                const symbol = getSwarSymbol(key, octave);
+                const subtitle = getSwarSubtitle(key);
 
-              {/* Komal Re */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('R', true)}
-                className="group py-2.5 sm:py-3 px-1 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-300 bg-gradient-to-b from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/30 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(245,158,11,0.2)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center hover:border-amber-500"
-              >
-                <span className="underline decoration-2 underline-offset-4">
-                  {octave === 'high' ? "R'" : octave === 'low' ? 'R.' : 'R'}
-                </span>
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                  Komal Re
-                </span>
-              </button>
+                return (
+                  <button
+                    key={`${key.swarBase}_${key.isKomal ? 'k' : key.isTeevra ? 't' : 's'}`}
+                    type="button"
+                    onClick={() => handleSwarClick(key.swarBase, key.isKomal, key.isTeevra)}
+                    className={style.button}
+                    title={`${key.label} (${octave === 'low' ? 'Mandra' : octave === 'high' ? 'Taar' : 'Madhya'})`}
+                  >
+                    {key.isKomal ? (
+                      <span className="border-b-2 border-current pb-[1.5px] leading-none inline-block">
+                        {symbol}
+                      </span>
+                    ) : (
+                      <span className="leading-none inline-block">{symbol}</span>
+                    )}
 
-              {/* Suddha Re */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('R')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "R'" : octave === 'low' ? 'R.' : 'R'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Re • ਰੇ
-                </span>
-              </button>
-
-              {/* Komal Ga */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('G', true)}
-                className="group py-2.5 sm:py-3 px-1 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-300 bg-gradient-to-b from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/30 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(245,158,11,0.2)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center hover:border-amber-500"
-              >
-                <span className="underline decoration-2 underline-offset-4">
-                  {octave === 'high' ? "G'" : octave === 'low' ? 'G.' : 'G'}
-                </span>
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                  Komal Ga
-                </span>
-              </button>
-
-              {/* Suddha Ga */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('G')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "G'" : octave === 'low' ? 'G.' : 'G'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Ga • ਗਾ
-                </span>
-              </button>
-
-              {/* Suddha Ma */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('M')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "M'" : octave === 'low' ? 'M.' : 'M'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Ma • ਮਾ
-                </span>
-              </button>
-
-              {/* Teevra Ma */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('M', false, true)}
-                className="group py-2.5 sm:py-3 px-1 rounded-xl border-2 border-purple-400 dark:border-purple-500 text-purple-800 dark:text-purple-300 bg-gradient-to-b from-purple-50 to-purple-100/60 dark:from-purple-950/40 dark:to-purple-900/30 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(168,85,247,0.2)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center hover:border-purple-500"
-              >
-                <span>M&apos;</span>
-                <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400">
-                  Teevra Ma
-                </span>
-              </button>
-
-              {/* Suddha Pa */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('P')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "P'" : octave === 'low' ? 'P.' : 'P'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Pa • ਪਾ
-                </span>
-              </button>
-
-              {/* Komal Dha */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('D', true)}
-                className="group py-2.5 sm:py-3 px-1 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-300 bg-gradient-to-b from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/30 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(245,158,11,0.2)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center hover:border-amber-500"
-              >
-                <span className="underline decoration-2 underline-offset-4">
-                  {octave === 'high' ? "D'" : octave === 'low' ? 'D.' : 'D'}
-                </span>
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                  Komal Dha
-                </span>
-              </button>
-
-              {/* Suddha Dha */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('D')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "D'" : octave === 'low' ? 'D.' : 'D'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Dha • ਧਾ
-                </span>
-              </button>
-
-              {/* Komal Ni */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('N', true)}
-                className="group py-2.5 sm:py-3 px-1 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-300 bg-gradient-to-b from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/30 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(245,158,11,0.2)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center hover:border-amber-500"
-              >
-                <span className="underline decoration-2 underline-offset-4">
-                  {octave === 'high' ? "N'" : octave === 'low' ? 'N.' : 'N'}
-                </span>
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                  Komal Ni
-                </span>
-              </button>
-
-              {/* Suddha Ni */}
-              <button
-                type="button"
-                onClick={() => handleSwarClick('N')}
-                className={`group py-2.5 sm:py-3 px-1 rounded-xl border-2 font-black text-base sm:text-lg shadow-[0_3px_0_rgba(0,0,0,0.12)] active:shadow-none active:translate-y-[3px] transition-all flex flex-col items-center justify-center ${
-                  octave === 'low'
-                    ? 'border-cyan-400 text-cyan-600 dark:text-cyan-300 bg-gradient-to-b from-cyan-50 to-cyan-100/50 dark:from-cyan-950/40 dark:to-cyan-900/30'
-                    : octave === 'high'
-                    ? 'border-rose-400 text-rose-600 dark:text-rose-300 bg-gradient-to-b from-rose-50 to-rose-100/50 dark:from-rose-950/40 dark:to-rose-900/30'
-                    : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 hover:border-amber-400'
-                }`}
-              >
-                <span>{octave === 'high' ? "N'" : octave === 'low' ? 'N.' : 'N'}</span>
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-amber-500">
-                  Ni • ਨੀ
-                </span>
-              </button>
+                    <span className={`text-[10px] font-semibold mt-1 truncate max-w-full ${style.subtitle}`}>
+                      {subtitle}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
