@@ -195,6 +195,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
             {/* Audio Toggle */}
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-1.5 rounded-lg border transition-all ${
                 soundEnabled
@@ -210,6 +211,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
             {onToggleCollapse && (
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={onToggleCollapse}
                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
                 title={isCollapsed ? 'Expand Swar Keyboard' : 'Collapse Swar Keyboard'}
@@ -232,6 +234,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                 </span>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setOctave('low')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
                     octave === 'low'
@@ -244,6 +247,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
 
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setOctave('mid')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
                     octave === 'mid'
@@ -256,6 +260,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
 
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setOctave('high')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all ${
                     octave === 'high'
@@ -271,6 +276,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setIsGraceNote(!isGraceNote)}
                   className={`px-3 py-1.5 text-xs rounded-xl font-bold border transition-all ${
                     isGraceNote
@@ -284,6 +290,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
 
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onInsertSwar('-')}
                   className="px-3.5 py-1.5 text-xs font-mono font-black rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs active:scale-95 transition-all"
                   title="Sustain / Rest (—)"
@@ -294,6 +301,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                 {onBackspace && (
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={onBackspace}
                     className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-rose-500 hover:border-rose-300 dark:hover:border-rose-800 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 transition-colors shadow-xs active:scale-95"
                     title="Backspace"
@@ -305,6 +313,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                 {onNextCell && (
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={onNextCell}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md active:scale-95 transition-all"
                     title="Next Matra Box"
@@ -327,6 +336,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                   <button
                     key={`${key.swarBase}_${key.isKomal ? 'k' : key.isTeevra ? 't' : 's'}`}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSwarClick(key.swarBase, key.isKomal, key.isTeevra)}
                     className={style.button}
                     title={`${key.label} (${octave === 'low' ? 'Mandra' : octave === 'high' ? 'Taar' : 'Madhya'})`}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   useGetNotationByIdQuery,
@@ -137,7 +137,18 @@ export default function EditNotationPage({ params }: PageProps) {
     lines: [],
   });
 
-  // Active focused cell for Swar Keyboard
+  // Focused target for Swar Keyboard ('grid' | 'vaadi' | 'samvaadi' | 'aroh' | 'avroh')
+  const [activeInputTarget, setActiveInputTarget] = useState<
+    'grid' | 'vaadi' | 'samvaadi' | 'aroh' | 'avroh'
+  >('grid');
+
+  // Input refs for direct focus & cursor manipulation
+  const vaadiInputRef = useRef<HTMLInputElement>(null);
+  const samvaadiInputRef = useRef<HTMLInputElement>(null);
+  const arohInputRef = useRef<HTMLInputElement>(null);
+  const avrohInputRef = useRef<HTMLInputElement>(null);
+
+  // Active focused cell for Swar Keyboard in grid
   const [activeCell, setActiveCell] = useState<{
     sectionIndex: number;
     rowIndex: number;
@@ -204,6 +215,73 @@ export default function EditNotationPage({ params }: PageProps) {
 
   // Swar Keyboard Actions
   const handleInsertSwar = (swar: string) => {
+    // 1. VAADI
+    if (activeInputTarget === 'vaadi') {
+      setVaadi(swar);
+      if (vaadiInputRef.current) {
+        vaadiInputRef.current.focus();
+      }
+      return;
+    }
+
+    // 2. SAMVAADI
+    if (activeInputTarget === 'samvaadi') {
+      setSamvaadi(swar);
+      if (samvaadiInputRef.current) {
+        samvaadiInputRef.current.focus();
+      }
+      return;
+    }
+
+    // 3. AROH
+    if (activeInputTarget === 'aroh') {
+      const input = arohInputRef.current;
+      if (input) {
+        const start = input.selectionStart ?? aroh.length;
+        const end = input.selectionEnd ?? aroh.length;
+        const before = aroh.substring(0, start);
+        const after = aroh.substring(end);
+        const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
+        const inserted = (needsSpace ? ' ' : '') + swar + ' ';
+        const nextValue = before + inserted + after;
+        setAroh(nextValue);
+        const newPos = start + inserted.length;
+        setTimeout(() => {
+          input.focus();
+          input.setSelectionRange(newPos, newPos);
+        }, 0);
+      } else {
+        const needsSpace = aroh.length > 0 && !aroh.endsWith(' ') && !aroh.endsWith(',');
+        setAroh((prev) => prev + (needsSpace ? ' ' : '') + swar + ' ');
+      }
+      return;
+    }
+
+    // 4. AVROH
+    if (activeInputTarget === 'avroh') {
+      const input = avrohInputRef.current;
+      if (input) {
+        const start = input.selectionStart ?? avroh.length;
+        const end = input.selectionEnd ?? avroh.length;
+        const before = avroh.substring(0, start);
+        const after = avroh.substring(end);
+        const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
+        const inserted = (needsSpace ? ' ' : '') + swar + ' ';
+        const nextValue = before + inserted + after;
+        setAvroh(nextValue);
+        const newPos = start + inserted.length;
+        setTimeout(() => {
+          input.focus();
+          input.setSelectionRange(newPos, newPos);
+        }, 0);
+      } else {
+        const needsSpace = avroh.length > 0 && !avroh.endsWith(' ') && !avroh.endsWith(',');
+        setAvroh((prev) => prev + (needsSpace ? ' ' : '') + swar + ' ');
+      }
+      return;
+    }
+
+    // 5. GRID (DEFAULT)
     if (!activeCell) {
       setActiveCell({ sectionIndex: 0, rowIndex: 0, matraIndex: 0 });
       return;
@@ -229,6 +307,27 @@ export default function EditNotationPage({ params }: PageProps) {
   };
 
   const handleNextCell = () => {
+    if (activeInputTarget === 'vaadi') {
+      setActiveInputTarget('samvaadi');
+      samvaadiInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'samvaadi') {
+      setActiveInputTarget('aroh');
+      arohInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'aroh') {
+      setActiveInputTarget('avroh');
+      avrohInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'avroh') {
+      setActiveInputTarget('grid');
+      setActiveCell({ sectionIndex: 0, rowIndex: 0, matraIndex: 0 });
+      return;
+    }
+
     if (!activeCell) return;
     const { sectionIndex, rowIndex, matraIndex } = activeCell;
     const matrasCount = currentTaal.matras || 16;
@@ -243,6 +342,22 @@ export default function EditNotationPage({ params }: PageProps) {
   };
 
   const handlePrevCell = () => {
+    if (activeInputTarget === 'samvaadi') {
+      setActiveInputTarget('vaadi');
+      vaadiInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'aroh') {
+      setActiveInputTarget('samvaadi');
+      samvaadiInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'avroh') {
+      setActiveInputTarget('aroh');
+      arohInputRef.current?.focus();
+      return;
+    }
+
     if (!activeCell) return;
     const { sectionIndex, rowIndex, matraIndex } = activeCell;
     const matrasCount = currentTaal.matras || 16;
@@ -262,6 +377,91 @@ export default function EditNotationPage({ params }: PageProps) {
   };
 
   const handleBackspace = () => {
+    if (activeInputTarget === 'vaadi') {
+      setVaadi('');
+      vaadiInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'samvaadi') {
+      setSamvaadi('');
+      samvaadiInputRef.current?.focus();
+      return;
+    }
+    if (activeInputTarget === 'aroh') {
+      const input = arohInputRef.current;
+      if (input) {
+        const start = input.selectionStart ?? aroh.length;
+        const end = input.selectionEnd ?? aroh.length;
+        if (start === end) {
+          if (start === 0) return;
+          let before = aroh.substring(0, start);
+          const after = aroh.substring(end);
+          if (before.endsWith(' ')) {
+            before = before.trimEnd();
+          }
+          const lastSpaceIdx = before.lastIndexOf(' ');
+          const newBefore = lastSpaceIdx === -1 ? '' : before.substring(0, lastSpaceIdx + 1);
+          const nextVal = newBefore + after;
+          setAroh(nextVal);
+          const newPos = newBefore.length;
+          setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newPos, newPos);
+          }, 0);
+        } else {
+          const before = aroh.substring(0, start);
+          const after = aroh.substring(end);
+          setAroh(before + after);
+          setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(start, start);
+          }, 0);
+        }
+      } else {
+        const trimmed = aroh.trimEnd();
+        const lastSpace = trimmed.lastIndexOf(' ');
+        setAroh(lastSpace === -1 ? '' : trimmed.substring(0, lastSpace + 1));
+      }
+      return;
+    }
+    if (activeInputTarget === 'avroh') {
+      const input = avrohInputRef.current;
+      if (input) {
+        const start = input.selectionStart ?? avroh.length;
+        const end = input.selectionEnd ?? avroh.length;
+        if (start === end) {
+          if (start === 0) return;
+          let before = avroh.substring(0, start);
+          const after = avroh.substring(end);
+          if (before.endsWith(' ')) {
+            before = before.trimEnd();
+          }
+          const lastSpaceIdx = before.lastIndexOf(' ');
+          const newBefore = lastSpaceIdx === -1 ? '' : before.substring(0, lastSpaceIdx + 1);
+          const nextVal = newBefore + after;
+          setAvroh(nextVal);
+          const newPos = newBefore.length;
+          setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(newPos, newPos);
+          }, 0);
+        } else {
+          const before = avroh.substring(0, start);
+          const after = avroh.substring(end);
+          setAvroh(before + after);
+          setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(start, start);
+          }, 0);
+        }
+      } else {
+        const trimmed = avroh.trimEnd();
+        const lastSpace = trimmed.lastIndexOf(' ');
+        setAvroh(lastSpace === -1 ? '' : trimmed.substring(0, lastSpace + 1));
+      }
+      return;
+    }
+
     if (!activeCell) return;
     const { sectionIndex, rowIndex, matraIndex } = activeCell;
     setSections((prev) =>
@@ -437,10 +637,18 @@ export default function EditNotationPage({ params }: PageProps) {
     );
   }
 
-  const activeCellLabel = activeCell
-    ? `${sections[activeCell.sectionIndex]?.name || 'Section'} • Row ${activeCell.rowIndex + 1
-    } • Matra ${activeCell.matraIndex + 1}`
-    : undefined;
+  const activeCellLabel = useMemo(() => {
+    if (activeInputTarget === 'vaadi') return 'Input: Vaadi (वादी)';
+    if (activeInputTarget === 'samvaadi') return 'Input: Samvaadi (संवादी)';
+    if (activeInputTarget === 'aroh') return 'Input: Aroh (आरोह)';
+    if (activeInputTarget === 'avroh') return 'Input: Avroh (अवरोह)';
+    if (activeCell) {
+      return `${sections[activeCell.sectionIndex]?.name || 'Section'} • Row ${
+        activeCell.rowIndex + 1
+      } • Matra ${activeCell.matraIndex + 1}`;
+    }
+    return undefined;
+  }, [activeInputTarget, activeCell, sections]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-amber-500 selection:text-white">
@@ -596,50 +804,126 @@ export default function EditNotationPage({ params }: PageProps) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                      Vaadi / Samvaadi
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        Vaadi / Samvaadi
+                      </label>
+                      {(activeInputTarget === 'vaadi' || activeInputTarget === 'samvaadi') && (
+                        <span className="text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-1.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700 flex items-center gap-1 animate-pulse">
+                          <Sparkles size={9} />
+                          {activeInputTarget === 'vaadi' ? 'Vaadi (Swar)' : 'Samvaadi (Swar)'}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex gap-2 mt-1">
                       <input
+                        ref={vaadiInputRef}
                         type="text"
                         value={vaadi}
+                        onFocus={() => {
+                          setActiveInputTarget('vaadi');
+                          setKeyboardCollapsed(false);
+                        }}
+                        onClick={() => {
+                          setActiveInputTarget('vaadi');
+                          setKeyboardCollapsed(false);
+                        }}
                         onChange={(e) => setVaadi(e.target.value)}
                         placeholder="V: R"
-                        className="w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
+                          activeInputTarget === 'vaadi'
+                            ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                        }`}
                       />
                       <input
+                        ref={samvaadiInputRef}
                         type="text"
                         value={samvaadi}
+                        onFocus={() => {
+                          setActiveInputTarget('samvaadi');
+                          setKeyboardCollapsed(false);
+                        }}
+                        onClick={() => {
+                          setActiveInputTarget('samvaadi');
+                          setKeyboardCollapsed(false);
+                        }}
                         onChange={(e) => setSamvaadi(e.target.value)}
                         placeholder="S: P"
-                        className="w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
+                          activeInputTarget === 'samvaadi'
+                            ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                      Aroh
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        Aroh
+                      </label>
+                      {activeInputTarget === 'aroh' && (
+                        <span className="text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-1.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700 flex items-center gap-1 animate-pulse">
+                          <Sparkles size={9} />
+                          Editing Aroh via Swar Keyboard
+                        </span>
+                      )}
+                    </div>
                     <input
+                      ref={arohInputRef}
                       type="text"
                       value={aroh}
+                      onFocus={() => {
+                        setActiveInputTarget('aroh');
+                        setKeyboardCollapsed(false);
+                      }}
+                      onClick={() => {
+                        setActiveInputTarget('aroh');
+                        setKeyboardCollapsed(false);
+                      }}
                       onChange={(e) => setAroh(e.target.value)}
                       placeholder="S R, M' P, N S"
-                      className="w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
+                        activeInputTarget === 'aroh'
+                          ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                      }`}
                     />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                      Avroh
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        Avroh
+                      </label>
+                      {activeInputTarget === 'avroh' && (
+                        <span className="text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/70 px-1.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700 flex items-center gap-1 animate-pulse">
+                          <Sparkles size={9} />
+                          Editing Avroh via Swar Keyboard
+                        </span>
+                      )}
+                    </div>
                     <input
+                      ref={avrohInputRef}
                       type="text"
                       value={avroh}
+                      onFocus={() => {
+                        setActiveInputTarget('avroh');
+                        setKeyboardCollapsed(false);
+                      }}
+                      onClick={() => {
+                        setActiveInputTarget('avroh');
+                        setKeyboardCollapsed(false);
+                      }}
                       onChange={(e) => setAvroh(e.target.value)}
                       placeholder="S N D P, M' G, R S"
-                      className="w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
+                        activeInputTarget === 'avroh'
+                          ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                      }`}
                     />
                   </div>
                 </div>
@@ -675,10 +959,11 @@ export default function EditNotationPage({ params }: PageProps) {
                   taal={currentTaal}
                   sections={sections}
                   onSectionsChange={setSections}
-                  activeCell={activeCell}
-                  onCellFocus={(sIdx, rIdx, mIdx) =>
-                    setActiveCell({ sectionIndex: sIdx, rowIndex: rIdx, matraIndex: mIdx })
-                  }
+                  activeCell={activeInputTarget === 'grid' ? activeCell : null}
+                  onCellFocus={(sIdx, rIdx, mIdx) => {
+                    setActiveInputTarget('grid');
+                    setActiveCell({ sectionIndex: sIdx, rowIndex: rIdx, matraIndex: mIdx });
+                  }}
                 />
               )}
 
@@ -807,7 +1092,7 @@ export default function EditNotationPage({ params }: PageProps) {
       </main>
 
       {/* Swar Keyboard */}
-      {(activeTab === 'edit' || activeTab === 'split') && activeSheetTab === 'notation' && (
+      {(activeTab === 'edit' || activeTab === 'split') && (activeSheetTab === 'notation' || activeInputTarget !== 'grid') && (
         <SwarKeyboard
           onInsertSwar={handleInsertSwar}
           onBackspace={handleBackspace}
