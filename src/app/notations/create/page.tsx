@@ -864,7 +864,7 @@ export default function CreateNotationPage() {
                       singleNote={false}
                       isActive={activeInputTarget === 'aroh'}
                       language={currentLanguage}
-                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      className={`w-full mt-1 px-3 py-1.5 text-sm font-sans font-bold tracking-wide rounded-xl border transition-all ${
                         activeInputTarget === 'aroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
                           : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
@@ -900,7 +900,7 @@ export default function CreateNotationPage() {
                       singleNote={false}
                       isActive={activeInputTarget === 'avroh'}
                       language={currentLanguage}
-                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      className={`w-full mt-1 px-3 py-1.5 text-sm font-sans font-bold tracking-wide rounded-xl border transition-all ${
                         activeInputTarget === 'avroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
                           : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'

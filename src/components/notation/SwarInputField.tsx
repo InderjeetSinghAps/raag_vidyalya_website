@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
-import { SwarDisplay } from './SwarDisplay';
-import { Language, mapPhysicalKeyToSwar } from '@/lib/swarUtils';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import { Language, mapPhysicalKeyToSwar, normalizeSwarInput } from '@/lib/swarUtils';
 
 export interface SwarInputFieldProps {
   value: string;
@@ -10,6 +9,7 @@ export interface SwarInputFieldProps {
   placeholder?: string;
   isActive?: boolean;
   onFocus?: () => void;
+  onBlur?: () => void;
   onClick?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
@@ -24,10 +24,10 @@ export interface SwarInputFieldProps {
 /**
  * Rich Classical Swar Input Field.
  * Renders authentic Indian classical & Gurmat Sangeet swars where:
- * - Komal swars (R_, G_, D_, N_) display with a crisp, authentic horizontal line directly UNDER the letter
+ * - Komal swars (R̲, G̲, D̲, N̲) display with a crisp, authentic horizontal line directly UNDER the letter
  * - Never shows a separate underscore '_' character
  * - Supports physical keyboard shortcuts, SwarKeyboard clicks, and normal typing
- * - Includes animated blinking caret when active/focused
+ * - Full native cursor placement, selection, and editing
  */
 export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
   (
@@ -37,11 +37,10 @@ export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
       placeholder = '',
       isActive = false,
       onFocus,
+      onBlur,
       onClick,
       onKeyDown,
       className = '',
-      language,
-      isDarkMode = false,
       singleNote = false,
       autoFocus = false,
       id,
@@ -50,23 +49,7 @@ export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
     ref
   ) => {
     const internalInputRef = useRef<HTMLInputElement>(null);
-    const [isFocused, setIsFocused] = useState(false);
-
     useImperativeHandle(ref, () => internalInputRef.current as HTMLInputElement);
-
-    const handleFocus = () => {
-      setIsFocused(true);
-      onFocus?.();
-    };
-
-    const handleBlur = () => {
-      setIsFocused(false);
-    };
-
-    const handleClick = () => {
-      internalInputRef.current?.focus();
-      onClick?.();
-    };
 
     const handleInternalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Let parent custom keydown execute first
@@ -86,21 +69,10 @@ export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
           e.preventDefault();
           onChange('');
           return;
-        } else {
-          // In phrase mode, if at the end of phrase, smartly backspace the last swar token
-          const input = internalInputRef.current;
-          if (input && input.selectionStart === value.length && input.selectionEnd === value.length) {
-            e.preventDefault();
-            const trimmed = value.trimEnd();
-            const lastSpaceIdx = trimmed.lastIndexOf(' ');
-            const nextVal = lastSpaceIdx >= 0 ? trimmed.substring(0, lastSpaceIdx + 1) : '';
-            onChange(nextVal);
-            return;
-          }
         }
       }
 
-      // Check physical keyboard mapping for Swar (e.g. s -> S, Shift+r -> R_, etc.)
+      // Check physical keyboard mapping for Swar (e.g. s -> Sa, Shift+r -> Komal Re, etc.)
       const mapped = mapPhysicalKeyToSwar(e.key, e.shiftKey);
       if (mapped) {
         e.preventDefault();
@@ -114,7 +86,8 @@ export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
           const after = value.substring(end);
           const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
           const inserted = (needsSpace ? ' ' : '') + mapped + ' ';
-          onChange(before + inserted + after);
+          const nextVal = normalizeSwarInput(before + inserted + after);
+          onChange(nextVal);
           const newPos = start + inserted.length;
           setTimeout(() => {
             input?.setSelectionRange(newPos, newPos);
@@ -123,55 +96,27 @@ export const SwarInputField = forwardRef<HTMLInputElement, SwarInputFieldProps>(
       }
     };
 
-    const isFieldActive = isActive || isFocused;
-    const hasValue = Boolean(value && value.trim().length > 0);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const normalized = normalizeSwarInput(e.target.value);
+      onChange(normalized);
+    };
 
     return (
-      <div
-        onClick={handleClick}
-        className={`relative flex items-center min-h-[38px] cursor-text select-none overflow-hidden transition-all duration-150 ${className}`}
-      >
-        {/* Invisible real HTML input to capture focus, cursor, paste, and physical typing */}
-        <input
-          ref={internalInputRef}
-          id={id}
-          name={name}
-          type="text"
-          value={value}
-          autoFocus={autoFocus}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleInternalKeyDown}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10 p-0 m-0 border-0 focus:outline-none"
-          tabIndex={0}
-        />
-
-        {/* Visual Layer: Renders true classical Hindustani notation */}
-        <div className="w-full flex items-center justify-start pointer-events-none overflow-x-auto no-scrollbar">
-          {hasValue ? (
-            <div className="flex items-center">
-              <SwarDisplay
-                value={value}
-                language={language}
-                isDarkMode={isDarkMode}
-                className="leading-none text-current"
-              />
-              {/* Blinking caret cursor when active */}
-              {isFieldActive && (
-                <span className="inline-block w-[2px] h-[1.15em] bg-amber-500 dark:bg-amber-400 animate-pulse ml-0.5 align-middle rounded-full shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center text-slate-400 dark:text-slate-500 font-normal text-xs">
-              <span>{placeholder}</span>
-              {isFieldActive && (
-                <span className="inline-block w-[2px] h-[1.15em] bg-amber-500 dark:bg-amber-400 animate-pulse ml-1 align-middle rounded-full shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <input
+        ref={internalInputRef}
+        id={id}
+        name={name}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onClick={onClick}
+        onKeyDown={handleInternalKeyDown}
+        onChange={handleChange}
+        className={className}
+      />
     );
   }
 );

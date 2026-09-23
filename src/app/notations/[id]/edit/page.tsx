@@ -127,10 +127,10 @@ export default function EditNotationPage({ params }: PageProps) {
       setName(notation.name || '');
       setRaag(notation.raag || '');
       setTime(notation.time || '');
-      setAroh(notation.aroh || '');
-      setAvroh(notation.avroh || '');
-      setVaadi(notation.vaadi || '');
-      setSamvaadi(notation.samvaadi || '');
+      setAroh(normalizeSwarInput(notation.aroh || ''));
+      setAvroh(normalizeSwarInput(notation.avroh || ''));
+      setVaadi(normalizeSwarInput(notation.vaadi || ''));
+      setSamvaadi(normalizeSwarInput(notation.samvaadi || ''));
       setIsPublic(notation.isPublic ?? true);
 
       if (notation.taal) {
@@ -138,7 +138,15 @@ export default function EditNotationPage({ params }: PageProps) {
       }
 
       if (notation.sections && notation.sections.length > 0) {
-        setSections(JSON.parse(JSON.stringify(notation.sections)));
+        const rawSecs = JSON.parse(JSON.stringify(notation.sections));
+        const normalizedSecs = rawSecs.map((sec: any) => ({
+          ...sec,
+          rows: (sec.rows || []).map((row: any) => ({
+            ...row,
+            swars: (row.swars || []).map((sw: string) => normalizeSwarInput(sw)),
+          })),
+        }));
+        setSections(normalizedSecs);
       }
 
       if (notation.shabad) {
@@ -943,7 +951,7 @@ export default function EditNotationPage({ params }: PageProps) {
                       singleNote={false}
                       isActive={activeInputTarget === 'aroh'}
                       language={currentLanguage}
-                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      className={`w-full mt-1 px-3 py-1.5 text-sm font-sans font-bold tracking-wide rounded-xl border transition-all ${
                         activeInputTarget === 'aroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
                           : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
@@ -979,7 +987,7 @@ export default function EditNotationPage({ params }: PageProps) {
                       singleNote={false}
                       isActive={activeInputTarget === 'avroh'}
                       language={currentLanguage}
-                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      className={`w-full mt-1 px-3 py-1.5 text-sm font-sans font-bold tracking-wide rounded-xl border transition-all ${
                         activeInputTarget === 'avroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
                           : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
