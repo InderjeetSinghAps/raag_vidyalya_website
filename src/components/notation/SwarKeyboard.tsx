@@ -69,6 +69,7 @@ function getSwarSubtitle(key: SwarKeyDef) {
 
 function getKeyClasses(key: SwarKeyDef, octave: Octave) {
   const isKomal = key.isKomal;
+  const isTeevra = key.isTeevra;
 
   if (octave === 'low') {
     return {
@@ -94,13 +95,26 @@ function getKeyClasses(key: SwarKeyDef, octave: Octave) {
     };
   }
 
-  // mid / madhya
+  // mid / madhya: authentic past work styling
+  if (isKomal) {
+    return {
+      button:
+        'group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none border-2 border-dashed border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-300 bg-gradient-to-b from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/30 shadow-[0_3px_0_rgba(245,158,11,0.2)] hover:border-amber-500',
+      subtitle: 'text-amber-600 dark:text-amber-400 group-hover:text-amber-500',
+    };
+  }
+
+  if (isTeevra) {
+    return {
+      button:
+        'group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none border-2 border-solid border-purple-400 dark:border-purple-500 text-purple-800 dark:text-purple-300 bg-gradient-to-b from-purple-50 to-purple-100/60 dark:from-purple-950/40 dark:to-purple-900/30 shadow-[0_3px_0_rgba(168,85,247,0.2)] hover:border-purple-500',
+      subtitle: 'text-purple-600 dark:text-purple-400 group-hover:text-purple-500',
+    };
+  }
+
   return {
-    button: `group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none ${
-      isKomal
-        ? 'border-2 border-dashed border-slate-400 dark:border-slate-600 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-slate-50 to-slate-100/70 dark:from-slate-800/90 dark:to-slate-900 shadow-[0_3px_0_rgba(0,0,0,0.12)] hover:border-amber-400'
-        : 'border-2 border-solid border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 shadow-[0_3px_0_rgba(0,0,0,0.12)] hover:border-amber-400'
-    }`,
+    button:
+      'group py-2.5 sm:py-3 px-1 rounded-xl font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center active:translate-y-[3px] active:shadow-none border-2 border-solid border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-gradient-to-b from-white to-slate-100/80 dark:from-slate-800 dark:to-slate-900 shadow-[0_3px_0_rgba(0,0,0,0.12)] hover:border-amber-400',
     subtitle: 'text-slate-500 dark:text-slate-400 group-hover:text-amber-500',
   };
 }
@@ -342,7 +356,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
                     title={`${key.label} (${octave === 'low' ? 'Mandra' : octave === 'high' ? 'Taar' : 'Madhya'})`}
                   >
                     {key.isKomal ? (
-                      <span className="border-b-2 border-current pb-[1.5px] leading-none inline-block">
+                      <span className="underline decoration-2 underline-offset-4 leading-none inline-block">
                         {symbol}
                       </span>
                     ) : (

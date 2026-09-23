@@ -178,7 +178,9 @@ export function getSurSymbol(sur: Sur, lang: Language): string {
  */
 export function normalizeSwarInput(val: string): string {
   if (!val) return '';
-  return val.replace(/([SMRGPDNsmrgpdn\u0900-\u097F\u0A00-\u0A7F])_+/g, '$1\u0332');
+  return val
+    .replace(/([SMRGPDNsmrgpdn\u0900-\u097F\u0A00-\u0A7F])_+/g, '$1\u0332')
+    .replace(/\u0332\s+([\x27\x22.*])/g, '\u0332$1');
 }
 
 export function mapPhysicalKeyToSwar(key: string, shiftKey: boolean): string | null {
