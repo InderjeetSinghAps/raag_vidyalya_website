@@ -33,28 +33,28 @@ interface SwarKeyDef {
 }
 
 const SWAR_KEYS: SwarKeyDef[] = [
-  { swarBase: 'S', label: 'Sa', punjabi: 'ਸਾ' },
-  { swarBase: 'R', isKomal: true, label: 'Komal Re' },
-  { swarBase: 'R', label: 'Re', punjabi: 'ਰੇ' },
-  { swarBase: 'G', isKomal: true, label: 'Komal Ga' },
-  { swarBase: 'G', label: 'Ga', punjabi: 'ਗਾ' },
-  { swarBase: 'M', label: 'Ma', punjabi: 'ਮਾ' },
-  { swarBase: 'M', isTeevra: true, label: 'Teevra Ma' },
-  { swarBase: 'P', label: 'Pa', punjabi: 'ਪਾ' },
-  { swarBase: 'D', isKomal: true, label: 'Komal Dha' },
-  { swarBase: 'D', label: 'Dha', punjabi: 'ਧਾ' },
-  { swarBase: 'N', isKomal: true, label: 'Komal Ni' },
-  { swarBase: 'N', label: 'Ni', punjabi: 'ਨੀ' },
+  { swarBase: 'S', label: 'Sa', punjabi: 'ਸ' },
+  { swarBase: 'R', isKomal: true, label: 'Komal Re', punjabi: 'ਰੁ' },
+  { swarBase: 'R', label: 'Re', punjabi: 'ਰ' },
+  { swarBase: 'G', isKomal: true, label: 'Komal Ga', punjabi: 'ਗੁ' },
+  { swarBase: 'G', label: 'Ga', punjabi: 'ਗ' },
+  { swarBase: 'M', label: 'Ma', punjabi: 'ਮ' },
+  { swarBase: 'M', isTeevra: true, label: 'Teevra Ma', punjabi: 'ਮੇ' },
+  { swarBase: 'P', label: 'Pa', punjabi: 'ਪ' },
+  { swarBase: 'D', isKomal: true, label: 'Komal Dha', punjabi: 'ਧੁ' },
+  { swarBase: 'D', label: 'Dha', punjabi: 'ਧ' },
+  { swarBase: 'N', isKomal: true, label: 'Komal Ni', punjabi: 'ਨੁ' },
+  { swarBase: 'N', label: 'Ni', punjabi: 'ਨ' },
 ];
 
 function getSwarSymbol(key: SwarKeyDef, octave: Octave) {
+  const base = key.swarBase;
   if (key.isTeevra) {
     if (octave === 'low') return "M'.";
     if (octave === 'high') return "M''";
     return "M'";
   }
 
-  const base = key.swarBase;
   if (octave === 'low') return `${base}.`;
   if (octave === 'high') return `${base}'`;
   return base;

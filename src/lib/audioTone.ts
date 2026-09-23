@@ -45,7 +45,7 @@ export function playSwarSound(swar: string, octave: 'low' | 'mid' | 'high' = 'mi
     if (baseNote.startsWith('(') && baseNote.endsWith(')')) {
       baseNote = baseNote.slice(1, -1);
     }
-    baseNote = baseNote.replace(/[.']/g, '');
+    baseNote = baseNote.replace(/\u0332/g, '_').replace(/[.']/g, '');
 
     let freq = SWAR_FREQUENCIES[baseNote] || SWAR_FREQUENCIES[baseNote[0]] || 261.63;
 

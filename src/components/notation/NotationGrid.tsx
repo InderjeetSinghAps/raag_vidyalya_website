@@ -3,7 +3,8 @@
 import React from 'react';
 import { Taal, NotationSection, NotationRow } from '@/types/notation';
 import { SwarDisplay } from '@/components/notation/SwarDisplay';
-import { mapPhysicalKeyToSwar, Language } from '@/lib/swarUtils';
+import { SwarInputField } from '@/components/notation/SwarInputField';
+import { mapPhysicalKeyToSwar, normalizeSwarInput, Language } from '@/lib/swarUtils';
 import { useTheme } from 'next-themes';
 import {
   Plus,
@@ -386,10 +387,15 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                                 <SwarDisplay value={swarVal} language={language} isDarkMode={isDark} emptyPlaceholder="•" />
                               </div>
                             ) : isFocused ? (
-                              <input
-                                type="text"
+                              <SwarInputField
                                 value={swarVal}
-                                autoFocus
+                                onChange={(val) => updateSwar(sIdx, rIdx, mIdx, val)}
+                                singleNote={true}
+                                isActive={true}
+                                autoFocus={true}
+                                language={language}
+                                isDarkMode={isDark}
+                                placeholder="—"
                                 onFocus={() => onCellFocus(sIdx, rIdx, mIdx)}
                                 onKeyDown={(e) => {
                                   // Let standard navigation keys pass through
@@ -415,11 +421,7 @@ export const NotationGrid: React.FC<NotationGridProps> = ({
                                     }
                                   }
                                 }}
-                                onChange={(e) =>
-                                  updateSwar(sIdx, rIdx, mIdx, e.target.value)
-                                }
-                                placeholder="—"
-                                className="w-full py-2 px-1 font-black font-mono text-center text-sm sm:text-base rounded-xl transition-all duration-150 focus:outline-none bg-amber-100/95 text-slate-950 ring-2 ring-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.35)] scale-[1.05] z-10 dark:bg-slate-800/95 dark:text-white dark:ring-2 dark:ring-amber-400 dark:shadow-[0_0_16px_rgba(251,191,36,0.35)] placeholder:text-slate-400/40 dark:placeholder:text-slate-600/70 focus:placeholder:text-transparent"
+                                className="w-full py-1.5 px-1 font-black font-mono text-center text-sm sm:text-base rounded-xl transition-all duration-150 focus:outline-none bg-amber-100/95 text-slate-950 ring-2 ring-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.35)] scale-[1.05] z-10 dark:bg-slate-800/95 dark:text-white dark:ring-2 dark:ring-amber-400 dark:shadow-[0_0_16px_rgba(251,191,36,0.35)] justify-center"
                               />
                             ) : (
                               <button

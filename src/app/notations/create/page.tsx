@@ -13,8 +13,11 @@ import { NotationAuthGuard } from '@/components/notation/NotationAuthGuard';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { setLanguage, Language } from '@/store/languageSlice';
+import { SwarDisplay } from '@/components/notation/SwarDisplay';
+import { SwarInputField } from '@/components/notation/SwarInputField';
 import {
   mapPhysicalKeyToSwar,
+  normalizeSwarInput,
   formatPhraseToLanguage,
   formatSwarToLanguage,
 } from '@/lib/swarUtils';
@@ -153,7 +156,7 @@ export default function CreateNotationPage() {
     const swar = mapPhysicalKeyToSwar(e.key, e.shiftKey);
     if (swar) {
       e.preventDefault();
-      setVaadi(swar);
+      setVaadi(normalizeSwarInput(swar));
     }
   };
 
@@ -162,7 +165,7 @@ export default function CreateNotationPage() {
     const swar = mapPhysicalKeyToSwar(e.key, e.shiftKey);
     if (swar) {
       e.preventDefault();
-      setSamvaadi(swar);
+      setSamvaadi(normalizeSwarInput(swar));
     }
   };
 
@@ -182,7 +185,7 @@ export default function CreateNotationPage() {
       const after = getter.substring(end);
       const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
       const inserted = (needsSpace ? ' ' : '') + swar + ' ';
-      const nextVal = before + inserted + after;
+      const nextVal = normalizeSwarInput(before + inserted + after);
       setter(nextVal);
       const newPos = start + inserted.length;
       setTimeout(() => {
@@ -234,7 +237,7 @@ export default function CreateNotationPage() {
   const handleInsertSwar = (swar: string) => {
     // 1. VAADI
     if (activeInputTarget === 'vaadi') {
-      setVaadi(swar);
+      setVaadi(normalizeSwarInput(swar));
       if (vaadiInputRef.current) {
         vaadiInputRef.current.focus();
       }
@@ -243,7 +246,7 @@ export default function CreateNotationPage() {
 
     // 2. SAMVAADI
     if (activeInputTarget === 'samvaadi') {
-      setSamvaadi(swar);
+      setSamvaadi(normalizeSwarInput(swar));
       if (samvaadiInputRef.current) {
         samvaadiInputRef.current.focus();
       }
@@ -260,7 +263,7 @@ export default function CreateNotationPage() {
         const after = aroh.substring(end);
         const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
         const inserted = (needsSpace ? ' ' : '') + swar + ' ';
-        const nextValue = before + inserted + after;
+        const nextValue = normalizeSwarInput(before + inserted + after);
         setAroh(nextValue);
         const newPos = start + inserted.length;
         setTimeout(() => {
@@ -269,7 +272,7 @@ export default function CreateNotationPage() {
         }, 0);
       } else {
         const needsSpace = aroh.length > 0 && !aroh.endsWith(' ') && !aroh.endsWith(',');
-        setAroh((prev) => prev + (needsSpace ? ' ' : '') + swar + ' ');
+        setAroh((prev) => normalizeSwarInput(prev + (needsSpace ? ' ' : '') + swar + ' '));
       }
       return;
     }
@@ -284,7 +287,7 @@ export default function CreateNotationPage() {
         const after = avroh.substring(end);
         const needsSpace = before.length > 0 && !before.endsWith(' ') && !before.endsWith(',');
         const inserted = (needsSpace ? ' ' : '') + swar + ' ';
-        const nextValue = before + inserted + after;
+        const nextValue = normalizeSwarInput(before + inserted + after);
         setAvroh(nextValue);
         const newPos = start + inserted.length;
         setTimeout(() => {
@@ -293,7 +296,7 @@ export default function CreateNotationPage() {
         }, 0);
       } else {
         const needsSpace = avroh.length > 0 && !avroh.endsWith(' ') && !avroh.endsWith(',');
-        setAvroh((prev) => prev + (needsSpace ? ' ' : '') + swar + ' ');
+        setAvroh((prev) => normalizeSwarInput(prev + (needsSpace ? ' ' : '') + swar + ' '));
       }
       return;
     }
@@ -313,7 +316,7 @@ export default function CreateNotationPage() {
           rows: sec.rows.map((row, rIdx) => {
             if (rIdx !== rowIndex) return row;
             const newSwars = [...row.swars];
-            newSwars[matraIndex] = swar;
+            newSwars[matraIndex] = normalizeSwarInput(swar);
             return { ...row, swars: newSwars };
           }),
         };
@@ -786,10 +789,10 @@ export default function CreateNotationPage() {
                       )}
                     </div>
                     <div className="flex gap-2 mt-1">
-                      <input
+                      <SwarInputField
                         ref={vaadiInputRef}
-                        type="text"
                         value={vaadi}
+                        onChange={setVaadi}
                         onFocus={() => {
                           setActiveInputTarget('vaadi');
                           setKeyboardCollapsed(false);
@@ -798,19 +801,20 @@ export default function CreateNotationPage() {
                           setActiveInputTarget('vaadi');
                           setKeyboardCollapsed(false);
                         }}
-                        onKeyDown={handleKeyDownVaadi}
-                        onChange={(e) => setVaadi(e.target.value)}
                         placeholder="V: R"
-                        className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
+                        singleNote={true}
+                        isActive={activeInputTarget === 'vaadi'}
+                        language={currentLanguage}
+                        className={`w-1/2 px-2.5 py-1 text-xs font-bold rounded-xl border transition-all ${
                           activeInputTarget === 'vaadi'
                             ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
-                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
                         }`}
                       />
-                      <input
+                      <SwarInputField
                         ref={samvaadiInputRef}
-                        type="text"
                         value={samvaadi}
+                        onChange={setSamvaadi}
                         onFocus={() => {
                           setActiveInputTarget('samvaadi');
                           setKeyboardCollapsed(false);
@@ -819,13 +823,14 @@ export default function CreateNotationPage() {
                           setActiveInputTarget('samvaadi');
                           setKeyboardCollapsed(false);
                         }}
-                        onKeyDown={handleKeyDownSamvaadi}
-                        onChange={(e) => setSamvaadi(e.target.value)}
                         placeholder="S: P"
-                        className={`w-1/2 px-2.5 py-2 text-xs font-bold rounded-xl border transition-all ${
+                        singleNote={true}
+                        isActive={activeInputTarget === 'samvaadi'}
+                        language={currentLanguage}
+                        className={`w-1/2 px-2.5 py-1 text-xs font-bold rounded-xl border transition-all ${
                           activeInputTarget === 'samvaadi'
                             ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
-                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
                         }`}
                       />
                     </div>
@@ -843,10 +848,10 @@ export default function CreateNotationPage() {
                         </span>
                       )}
                     </div>
-                    <input
+                    <SwarInputField
                       ref={arohInputRef}
-                      type="text"
                       value={aroh}
+                      onChange={setAroh}
                       onFocus={() => {
                         setActiveInputTarget('aroh');
                         setKeyboardCollapsed(false);
@@ -855,13 +860,14 @@ export default function CreateNotationPage() {
                         setActiveInputTarget('aroh');
                         setKeyboardCollapsed(false);
                       }}
-                      onKeyDown={(e) => handleKeyDownPhrase(e, aroh, setAroh)}
-                      onChange={(e) => setAroh(e.target.value)}
                       placeholder="S R, M' P, N S"
-                      className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      singleNote={false}
+                      isActive={activeInputTarget === 'aroh'}
+                      language={currentLanguage}
+                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
                         activeInputTarget === 'aroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
                       }`}
                     />
                   </div>
@@ -878,10 +884,10 @@ export default function CreateNotationPage() {
                         </span>
                       )}
                     </div>
-                    <input
+                    <SwarInputField
                       ref={avrohInputRef}
-                      type="text"
                       value={avroh}
+                      onChange={setAvroh}
                       onFocus={() => {
                         setActiveInputTarget('avroh');
                         setKeyboardCollapsed(false);
@@ -890,13 +896,14 @@ export default function CreateNotationPage() {
                         setActiveInputTarget('avroh');
                         setKeyboardCollapsed(false);
                       }}
-                      onKeyDown={(e) => handleKeyDownPhrase(e, avroh, setAvroh)}
-                      onChange={(e) => setAvroh(e.target.value)}
                       placeholder="S N D P, M' G, R S"
-                      className={`w-full mt-1 px-3 py-2 text-xs font-mono font-bold rounded-xl border transition-all ${
+                      singleNote={false}
+                      isActive={activeInputTarget === 'avroh'}
+                      language={currentLanguage}
+                      className={`w-full mt-1 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border transition-all ${
                         activeInputTarget === 'avroh'
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 shadow-sm'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-within:ring-2 focus-within:ring-amber-500'
                       }`}
                     />
                   </div>

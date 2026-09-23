@@ -23,6 +23,7 @@ export interface SwarPart {
   octave: Octave;
   isKan: boolean;
   isSustain: boolean;
+  isSeparator?: boolean;
   sur?: Sur;
 }
 
@@ -46,9 +47,9 @@ export function parseSwarPhrase(input: string): SwarPart[] {
     ];
   }
 
-  // Tokenize swar components (grace note e.g. (P), or note token like D_, M', S., S', R, ਰੁ, रे॒, etc.)
+  // Tokenize swar components (grace note e.g. (P), or note token like D_, M', S., S', R, ਰੁ, रे॒, separators like commas, bars)
   const tokenRegex =
-    /(\([A-Za-z0-9_.'#\u0900-\u097F\u0A00-\u0A7F]+\)|(?:[A-Za-z\u0900-\u097F\u0A00-\u0A7F]+)(?:_)?(?:['#*.\u0307\u0323\u0331\u0951\u0952])?|[-—–])/g;
+    /(\([A-Za-z0-9_.'#\u0900-\u097F\u0A00-\u0A7F\u0300-\u036F]+\)|(?:[A-Za-z\u0900-\u097F\u0A00-\u0A7F]+[\u0300-\u036F]*)(?:_)?(?:['#*.\u0307\u0323\u0331\u0332\u0951\u0952])?|[-—–]|[,|/])/g;
   const matches = trimmed.match(tokenRegex);
 
   if (!matches || matches.length === 0) {
@@ -67,6 +68,17 @@ export function parseSwarPhrase(input: string): SwarPart[] {
   }
 
   return matches.map((m) => {
+    if (m === ',' || m === '|' || m === '/') {
+      return {
+        text: m,
+        isKomal: false,
+        isTeevra: false,
+        octave: 'mid' as Octave,
+        isKan: false,
+        isSustain: false,
+        isSeparator: true,
+      };
+    }
     const single = parseSwar(m);
     return {
       text: single.note,
@@ -127,6 +139,14 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
       className={`inline-flex items-center justify-center gap-0.5 font-black font-mono tracking-wide ${className}`}
     >
       {parts.map((p, idx) => {
+        if (p.isSeparator) {
+          return (
+            <span key={idx} className="text-slate-400 dark:text-slate-500 font-bold px-0.5 select-none">
+              {p.text}
+            </span>
+          );
+        }
+
         const color = getOctaveColor(p.octave, isDarkMode);
 
         if (p.isSustain) {

@@ -168,14 +168,19 @@ export function getSurSymbol(sur: Sur, lang: Language): string {
 /**
  * Physical keyboard shortcut mapping for Windows and Mac:
  * s -> Sa
- * r -> Re (Shuddh) | Shift + r -> Komal Re (R_)
- * g -> Ga (Shuddh) | Shift + g -> Komal Ga (G_)
+ * r -> Re (Shuddh) | Shift + r -> Komal Re (R̲ with underline directly below)
+ * g -> Ga (Shuddh) | Shift + g -> Komal Ga (G̲ with underline directly below)
  * m -> Ma (Shuddh) | Shift + m -> Teevra Ma (M')
  * p -> Pa
- * d -> Dha (Shuddh) | Shift + d -> Komal Dha (D_)
- * n -> Ni (Shuddh) | Shift + n -> Komal Ni (N_)
+ * d -> Dha (Shuddh) | Shift + d -> Komal Dha (D̲ with underline directly below)
+ * n -> Ni (Shuddh) | Shift + n -> Komal Ni (N̲ with underline directly below)
  * - -> Sustain
  */
+export function normalizeSwarInput(val: string): string {
+  if (!val) return '';
+  return val;
+}
+
 export function mapPhysicalKeyToSwar(key: string, shiftKey: boolean): string | null {
   const k = key.toLowerCase();
   if (k === 's') return 'S';
@@ -269,9 +274,9 @@ export function parseSwar(input: string): SwarToken {
   else if (text.toUpperCase() === "M'" || text === "M#" || text === "m'" || text === "M\u0301") {
     isTeevra = true;
     text = 'M';
-  } else if (text.includes('_') || text.includes('\u0331')) {
+  } else if (text.includes('_') || text.includes('\u0332') || text.includes('\u0331')) {
     isKomal = true;
-    text = text.replace(/[_|\u0331]/g, '').toUpperCase();
+    text = text.replace(/[_|\u0332\u0331]/g, '').toUpperCase();
   } else if (['re', 'ga', 'dha', 'ni'].includes(text)) {
     // English lowercase words from enum definition denote komal
     isKomal = true;
