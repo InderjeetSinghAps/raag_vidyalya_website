@@ -167,10 +167,8 @@ export const SwarDisplay: React.FC<SwarDisplayProps> = ({
         } else if (activeLang === 'hindi' && sur) {
           displayContent = HINDI_SUR_MAP[sur];
         } else if (activeLang === 'english') {
-          // English Bhatkhande notation with underline for Komal
-          const baseLetter = sur
-            ? (p.isTeevra ? "M'" : p.isKomal ? ENGLISH_SUR_MAP[sur] : ENGLISH_SUR_MAP[sur])
-            : p.isTeevra ? "M'" : p.text;
+          // English Bhatkhande notation: preserve exact note form from the 12 keyboard swars
+          const baseLetter = p.isTeevra ? "M'" : p.text;
 
           displayContent = p.isKomal ? (
             <span className="inline-block border-b-2 border-current pb-[1.5px] leading-none font-black">

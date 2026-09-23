@@ -178,18 +178,18 @@ export function getSurSymbol(sur: Sur, lang: Language): string {
  */
 export function normalizeSwarInput(val: string): string {
   if (!val) return '';
-  return val;
+  return val.replace(/([SMRGPDNsmrgpdn\u0900-\u097F\u0A00-\u0A7F])_+/g, '$1\u0332');
 }
 
 export function mapPhysicalKeyToSwar(key: string, shiftKey: boolean): string | null {
   const k = key.toLowerCase();
   if (k === 's') return 'S';
   if (k === 'p') return 'P';
-  if (k === 'r') return shiftKey ? 'R_' : 'R';
-  if (k === 'g') return shiftKey ? 'G_' : 'G';
+  if (k === 'r') return shiftKey ? 'R\u0332' : 'R';
+  if (k === 'g') return shiftKey ? 'G\u0332' : 'G';
   if (k === 'm') return shiftKey ? "M'" : 'M';
-  if (k === 'd') return shiftKey ? 'D_' : 'D';
-  if (k === 'n') return shiftKey ? 'N_' : 'N';
+  if (k === 'd') return shiftKey ? 'D\u0332' : 'D';
+  if (k === 'n') return shiftKey ? 'N\u0332' : 'N';
   if (key === '-' || key === '—') return '-';
   return null;
 }
@@ -347,7 +347,14 @@ export function formatSwarToLanguage(rawSwar: string, lang: Language): string {
   const sur = token.sur || getSurFromNote(token.note, token.isKomal, token.isTeevra);
   if (!sur) return rawSwar;
 
-  let symbol = getSurSymbol(sur, lang);
+  let symbol =
+    lang === 'english'
+      ? token.isTeevra
+        ? "M'"
+        : token.isKomal
+        ? `${token.note}\u0332`
+        : token.note
+      : getSurSymbol(sur, lang);
 
   // Octave indicators
   if (token.octave === 'low') {

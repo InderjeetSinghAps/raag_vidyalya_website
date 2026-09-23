@@ -124,7 +124,7 @@ export const SwarKeyboard: React.FC<SwarKeyboardProps> = ({
     if (isTeevra) {
       formatted = "M'";
     } else if (isKomal) {
-      formatted = `${swarBase}_`;
+      formatted = `${swarBase}\u0332`;
     }
 
     if (octave === 'low') {
